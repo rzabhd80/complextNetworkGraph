@@ -2,18 +2,10 @@
 Hybrid Approach: Table Transformer + Border Extraction + Visualizations
 ========================================================================
 
-Pipeline:
-1. Table Transformer DETECTION → Find table regions (works with colored tables!)
-2. OpenCV Border Extraction → Extract all lines/borders (ANY color)
-3. OCR → Extract words
-4. Map words to borders → Which words between which lines
-5. Build 3 graphs: Border Graph, Word Graph, Word-Border Mapping
-6. VISUALIZE: Borders, Cells, Words, and Combined views
-
 CRITICAL FIXES:
-1. **RESOLVED: PaddleOCR `ValueError: Unknown argument: use_cuda`** by removing explicit device flags.
-2. Table iteration logic confirmed correct; previous crash was due to the OCR bug.
-3. Detection Threshold remains at 0.01 and Dilation remains for robust detection.
+1. Table coordinates NOW returned immediately after detection (Step 1)
+2. OCR debugging added - saves input images and checks results
+3. OCR parameters tuned for better detection
 """
 import os
 
@@ -95,25 +87,28 @@ class HybridTableExtractor:
             print("✓ Detection model unloaded\n")
 
     def _load_ocr(self):
-        """Load OCR"""
+        """Load OCR with improved parameters"""
         if self.ocr is None:
-            print("Loading OCR...")
+            print("Loading OCR with optimized settings...")
 
-            # --- CRITICAL FIX: Removed conflicting device flags (use_cuda/use_cpu)
-            # to resolve ValueError: Unknown argument: use_cuda/use_gpu
-            # PaddleOCR will now rely on its internal auto-detection logic.
+            # Enhanced OCR parameters for better detection
+            # Valid parameters only - removed invalid ones
             self.ocr = PaddleOCR(
                 use_angle_cls=True,
                 lang='en',
-                # Removed explicit device flags here
+                det_db_thresh=0.3,  # Lower threshold for text detection (default 0.3)
+                det_db_box_thresh=0.5,  # Box threshold (default 0.6)
+                rec_batch_num=6,  # Batch size for recognition
+                # Removed: drop_score (doesn't exist)
+                # Removed: use_dilation (doesn't exist)
             )
-            print("✓ OCR loaded\n")
+            print("✓ OCR loaded with enhanced detection parameters\n")
 
     def detect_tables(self, image: Image.Image, debug_prefix: str = 'debug',
                       detection_threshold: float = 0.5) -> List[Dict]:
         """
         STEP 1: Use Table Transformer to detect table REGIONS
-        This works even with colored borders!
+        NOW RETURNS FULL TABLE DATA IMMEDIATELY
         """
         print("=" * 70)
         print("STEP 1: TABLE DETECTION")
@@ -146,7 +141,7 @@ class HybridTableExtractor:
                 # Increase padding for better context in cropping
                 x1, y1, x2, y2 = [int(i) for i in box.tolist()]
 
-                # Add a small buffer (e.g., 10 pixels)
+                # Add a buffer
                 buffer = 10
                 width, height = image.size
 
@@ -158,14 +153,13 @@ class HybridTableExtractor:
                 tables.append({
                     'bbox': [x1, y1, x2, y2],
                     'confidence': score.item(),
-                    'detection_method': 'table_transformer'
+                    'detection_method': 'table_transformer',
+                    'width': x2 - x1,
+                    'height': y2 - y1,
+                    'area': (x2 - x1) * (y2 - y1)
                 })
 
-        # Sort by confidence and size (area)
-        for table in tables:
-            x1, y1, x2, y2 = table['bbox']
-            table['area'] = (x2 - x1) * (y2 - y1)
-
+        # Sort by area (largest first)
         tables.sort(key=lambda t: t['area'], reverse=True)
 
         # SAVE DETECTION VISUALIZATION
@@ -182,16 +176,20 @@ class HybridTableExtractor:
             x1, y1, x2, y2 = table['bbox']
             color = colors[i % len(colors)]
             draw.rectangle([x1, y1, x2, y2], outline=color, width=5)
-            draw.text((x1, y1 - 20), f"Table {i + 1} (conf:{table['confidence']:.2f}, area:{table['area']})",
+            draw.text((x1, y1 - 20), f"Table {i + 1} (conf:{table['confidence']:.2f})",
                       fill=color)
         debug_img.save(debug_path)
         print(f"✓ Saved detection visualization: {debug_path}")
         print(f"✓ Found {len(tables)} table(s) at threshold {detection_threshold}")
 
         if len(tables) > 0:
+            print("\n📊 DETECTED TABLES WITH COORDINATES:")
             for i, table in enumerate(tables):
-                print(
-                    f"  Table {i + 1}: bbox={table['bbox']}, confidence={table['confidence']:.3f}, area={table['area']}")
+                print(f"  Table {i + 1}:")
+                print(f"    - BBox: {table['bbox']}")
+                print(f"    - Size: {table['width']}x{table['height']} pixels")
+                print(f"    - Confidence: {table['confidence']:.3f}")
+                print(f"    - Area: {table['area']} px²")
 
         # Cleanup
         del pixel_values, outputs, results
@@ -216,11 +214,9 @@ class HybridTableExtractor:
         # Edge detection (color-agnostic)
         edges = cv2.Canny(gray, 40, 120, apertureSize=3)
 
-        # --- CRITICAL FIX: DILATION ---
         # Apply morphological dilation to strengthen faint or broken lines
         kernel = np.ones((3, 3), np.uint8)
         edges = cv2.dilate(edges, kernel, iterations=1)
-        # ------------------------------
 
         # SAVE EDGE DETECTION OUTPUT
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -256,7 +252,7 @@ class HybridTableExtractor:
                 angle = np.abs(np.arctan2(dy, dx) * 180 / np.pi)
 
                 # Classify as horizontal or vertical
-                if angle < 10 or angle > 170:  # Horizontal (near 0 or 180 degrees)
+                if angle < 10 or angle > 170:  # Horizontal
                     y_avg = (y1 + y2) / 2
                     horizontal_lines.append({
                         'line_id': f"h_line_{len(horizontal_lines)}",
@@ -268,7 +264,7 @@ class HybridTableExtractor:
                         'length': length
                     })
 
-                elif 80 < angle < 100:  # Vertical (near 90 degrees)
+                elif 80 < angle < 100:  # Vertical
                     x_avg = (x1 + x2) / 2
                     vertical_lines.append({
                         'line_id': f"v_line_{len(vertical_lines)}",
@@ -322,7 +318,6 @@ class HybridTableExtractor:
         if len(lines) == 0:
             return []
 
-        # Sort lines by position first to make grouping efficient
         lines.sort(key=lambda l: l['position'])
 
         merged = []
@@ -335,17 +330,14 @@ class HybridTableExtractor:
             group = [line1]
             used[i] = True
 
-            # Group all subsequent lines that are within tolerance
             for j in range(i + 1, len(lines)):
                 line2 = lines[j]
                 if abs(line1['position'] - line2['position']) < tolerance:
                     group.append(line2)
                     used[j] = True
-                # Since lines are sorted, we can stop searching if distance exceeds tolerance
                 elif line2['position'] - line1['position'] > tolerance:
                     break
 
-            # Average the group
             avg_position = np.mean([l['position'] for l in group])
             min_start = min([l['start'] for l in group])
             max_end = max([l['end'] for l in group])
@@ -363,7 +355,7 @@ class HybridTableExtractor:
 
     def extract_words(self, image: np.ndarray, debug_prefix: str = 'debug') -> List[Dict]:
         """
-        STEP 3: Extract words with OCR
+        STEP 3: Extract words with OCR + EXTENSIVE DEBUGGING
         """
         print("-" * 30)
         print("STEP 3: OCR TEXT EXTRACTION")
@@ -377,37 +369,107 @@ class HybridTableExtractor:
         cv2.imwrite(debug_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
         print(f"✓ Saved OCR input image: {debug_path}")
         print(f"✓ Image shape: {image.shape}")
+        print(f"✓ Image size: {image.shape[1]}x{image.shape[0]} pixels")
 
+        # Check if image is too small
+        if image.shape[0] < 20 or image.shape[1] < 20:
+            print(f"⚠️  WARNING: Image too small ({image.shape[1]}x{image.shape[0]})! OCR may fail.")
+
+        # Try OCR
+        print("🔍 Running OCR...")
         result = self.ocr.ocr(image)
 
-        if result is None or len(result) == 0 or result[0] is None:
-            print("✗ OCR returned empty or invalid result!")
+        # EXTENSIVE DEBUG OUTPUT
+        print(f"\n🔍 OCR Raw Result Type: {type(result)}")
+        print(f"🔍 OCR Raw Result Length: {len(result) if result else 0}")
+
+        if result is None:
+            print("✗ OCR returned None!")
             return []
 
-        print(f"✓ OCR detected {len(result[0])} text regions")
+        if len(result) == 0:
+            print("✗ OCR returned empty list!")
+            return []
+
+        if result[0] is None:
+            print("✗ OCR result[0] is None!")
+            return []
+
+        # Debug: Check what result[0] actually is
+        print(f"🔍 OCR result[0] type: {type(result[0])}")
+
+        # Handle different PaddleOCR return formats
+        # Sometimes it returns a dict with keys, sometimes a list
+        if isinstance(result[0], dict):
+            print("🔍 OCR returned dict format - extracting 'rec_res' key...")
+            if 'rec_res' in result[0]:
+                detections = result[0]['rec_res']
+            else:
+                print(f"✗ Dict keys found: {list(result[0].keys())}")
+                print("✗ Cannot find text detections in dict format!")
+                return []
+        elif isinstance(result[0], (list, tuple)):
+            detections = result[0]
+        else:
+            print(f"✗ Unexpected result[0] type: {type(result[0])}")
+            return []
+
+        print(f"✓ OCR detected {len(detections)} text regions")
+
+        # Show first few detections for debugging
+        try:
+            if len(detections) > 0:
+                print("\n📝 First few OCR detections:")
+                # Convert to list if it's not already
+                det_list = list(detections) if hasattr(detections, '__iter__') else []
+                for idx, line in enumerate(det_list[:3]):
+                    # Try to extract text from different formats
+                    if isinstance(line, (list, tuple)) and len(line) >= 2:
+                        text = line[1][0] if isinstance(line[1], (list, tuple)) else line[1]
+                        print(f"  {idx + 1}. {text}")
+                    else:
+                        print(f"  {idx + 1}. {line}")
+        except Exception as e:
+            print(f"⚠️  Could not display sample detections: {e}")
 
         words = []
         word_id = 0
 
-        for line in result[0]:  # result[0] = first page
-            # Safe unpacking: bbox is first element, text/conf is second element
-            if not isinstance(line, (list, tuple)) or len(line) < 2:
-                continue
+        for line in detections:
+            # Handle dict format (newer PaddleOCR)
+            if isinstance(line, dict):
+                if 'text' in line and 'bbox' in line:
+                    text = line['text']
+                    bbox_points = line['bbox']
+                    confidence = line.get('score', 1.0)
+                else:
+                    continue
+            # Handle list/tuple format (older PaddleOCR)
+            elif isinstance(line, (list, tuple)) and len(line) >= 2:
+                bbox_points = line[0]
+                text_conf = line[1]
 
-            bbox = line[0]
-            # Handle different formats for text/conf
-            text_conf = line[1]
-            if isinstance(text_conf, (list, tuple)) and len(text_conf) == 2:
-                text, confidence = text_conf
-            elif isinstance(text_conf, str):
-                text, confidence = text_conf, 1.0  # fallback confidence
+                if isinstance(text_conf, (list, tuple)) and len(text_conf) == 2:
+                    text, confidence = text_conf
+                elif isinstance(text_conf, str):
+                    text, confidence = text_conf, 1.0
+                else:
+                    continue
             else:
                 continue
 
-            x_coords = [point[0] for point in bbox]
-            y_coords = [point[1] for point in bbox]
-            x1, y1 = min(x_coords), min(y_coords)
-            x2, y2 = max(x_coords), max(y_coords)
+            # Skip empty text
+            if not text or (isinstance(text, str) and text.strip() == ''):
+                continue
+
+            # Extract bounding box coordinates
+            if isinstance(bbox_points, (list, tuple)):
+                x_coords = [point[0] for point in bbox_points]
+                y_coords = [point[1] for point in bbox_points]
+                x1, y1 = min(x_coords), min(y_coords)
+                x2, y2 = max(x_coords), max(y_coords)
+            else:
+                continue
 
             words.append({
                 'word_id': f"word_{word_id}",
@@ -436,6 +498,11 @@ class HybridTableExtractor:
 
         if len(words) > 0:
             print(f"  Sample words: {[w['text'] for w in words[:5]]}")
+        else:
+            print("⚠️  NO WORDS DETECTED! Check:")
+            print("     1. Is the table region too small?")
+            print("     2. Is the text readable in the saved image?")
+            print("     3. Try adjusting OCR parameters")
 
         print()
         return words
@@ -443,7 +510,6 @@ class HybridTableExtractor:
     def map_words_to_borders(self, words: List[Dict], borders: Dict) -> List[Dict]:
         """
         STEP 4: Map each word to surrounding borders
-        Returns which borders (lines) surround each word
         """
         print("-" * 30)
         print("STEP 4: WORD-TO-BORDER MAPPING")
@@ -458,7 +524,6 @@ class HybridTableExtractor:
             x1, y1, x2, y2 = word['bbox']
             cx, cy = word['center']
 
-            # Find closest borders in each direction
             top_line = self._find_closest_line(cy, h_lines, 'above')
             bottom_line = self._find_closest_line(cy, h_lines, 'below')
             left_line = self._find_closest_line(cx, v_lines, 'left')
@@ -500,7 +565,6 @@ class HybridTableExtractor:
                     'distance': abs(cx - right_line['position'])
                 }
 
-            # Cell defined by 4 borders
             if top_line and bottom_line and left_line and right_line:
                 mapping['cell_defined_by'] = tuple(sorted([
                     top_line['line_id'],
@@ -533,18 +597,13 @@ class HybridTableExtractor:
                 candidates.append((line_pos - position, line))
 
         if candidates:
-            # Sort by distance (first element of the tuple)
             candidates.sort(key=lambda x: x[0])
-            # Return the closest line
             return candidates[0][1]
 
         return None
 
     def build_border_graph(self, borders: Dict) -> nx.Graph:
-        """
-        STEP 5: Build Border Graph
-        Nodes = lines, Edges = intersections
-        """
+        """STEP 5: Build Border Graph"""
         print("-" * 30)
         print("STEP 5: BUILD BORDER GRAPH")
         print("-" * 30)
@@ -554,7 +613,6 @@ class HybridTableExtractor:
         h_lines = borders['horizontal']
         v_lines = borders['vertical']
 
-        # Add nodes
         for line in h_lines + v_lines:
             G.add_node(
                 line['line_id'],
@@ -566,7 +624,6 @@ class HybridTableExtractor:
                 node_type='border'
             )
 
-        # Add edges (intersections)
         for h_line in h_lines:
             for v_line in v_lines:
                 h_y = h_line['position']
@@ -575,7 +632,6 @@ class HybridTableExtractor:
                 v_x = v_line['position']
                 v_y_start, v_y_end = v_line['start'], v_line['end']
 
-                # Check intersection (allow for a small tolerance/buffer, e.g., 2 pixels)
                 tolerance = 2
                 if (h_x_start - tolerance <= v_x <= h_x_end + tolerance and
                         v_y_start - tolerance <= h_y <= v_y_end + tolerance):
@@ -591,10 +647,7 @@ class HybridTableExtractor:
         return G
 
     def build_word_graph(self, words: List[Dict], k: int = 4) -> nx.DiGraph:
-        """
-        STEP 6: Build Word Graph
-        Nodes = words, Edges = spatial proximity (k-nearest neighbors)
-        """
+        """STEP 6: Build Word Graph"""
         print("-" * 30)
         print("STEP 6: BUILD WORD GRAPH")
         print("-" * 30)
@@ -611,7 +664,10 @@ class HybridTableExtractor:
                 node_type='word'
             )
 
-        # Build k-NN graph
+        if len(words) == 0:
+            print("✗ No words to build graph from")
+            return G
+
         word_centers = np.array([w['center'] for w in words])
         word_ids = [w['word_id'] for w in words]
 
@@ -619,21 +675,20 @@ class HybridTableExtractor:
             if not word_ids or i >= len(word_centers):
                 continue
 
-            # Calculate Euclidean distances from w1 to all other words
             distances = np.sqrt(np.sum((word_centers - word_centers[i]) ** 2, axis=1))
 
-            # Find indices of k nearest neighbors (excluding self, which is distance 0)
-            # Use partitioning to find the k smallest without full sort
-            k_indices = np.argpartition(distances, k + 1)[1:k + 1]
+            k_indices = np.argpartition(distances, min(k + 1, len(distances)))[1:k + 1]
 
             for j_idx in k_indices:
+                if j_idx >= len(words):
+                    continue
+
                 w2 = words[j_idx]
                 dist = distances[j_idx]
 
                 dx = w2['center'][0] - w1['center'][0]
                 dy = w2['center'][1] - w1['center'][1]
 
-                # Determine direction for edge type
                 if abs(dx) > abs(dy):
                     direction = 'horizontal'
                     edge_type = 'right' if dx > 0 else 'left'
@@ -649,9 +704,7 @@ class HybridTableExtractor:
         return G
 
     def infer_cells(self, mappings: List[Dict], debug_prefix: str = 'debug') -> List[Dict]:
-        """
-        STEP 7: Infer cells from word-border mappings
-        """
+        """STEP 7: Infer cells"""
         print("-" * 30)
         print("STEP 7: CELL INFERENCE")
         print("-" * 30)
@@ -659,27 +712,22 @@ class HybridTableExtractor:
         cell_groups = defaultdict(list)
 
         for mapping in mappings:
-            # Only use words that are fully enclosed by 4 borders
             if 'cell_defined_by' in mapping:
-                # The signature is already a sorted tuple from map_words_to_borders
                 signature = mapping['cell_defined_by']
                 cell_groups[signature].append(mapping)
 
         cells = []
         for cell_id, (signature, word_mappings) in enumerate(cell_groups.items()):
-            # Aggregate bounding box based on all words belonging to this cell
             x1_coords = [m['word_bbox'][0] for m in word_mappings]
             y1_coords = [m['word_bbox'][1] for m in word_mappings]
             x2_coords = [m['word_bbox'][2] for m in word_mappings]
             y2_coords = [m['word_bbox'][3] for m in word_mappings]
 
-            # Use the min/max of the words' bounding boxes to define the cell area
             left_pos = min(x1_coords)
             top_pos = min(y1_coords)
             right_pos = max(x2_coords)
             bottom_pos = max(y2_coords)
 
-            # Sort words based on reading order (top-to-bottom, then left-to-right)
             word_mappings.sort(key=lambda m: (m['word_center'][1], m['word_center'][0]))
 
             cells.append({
@@ -695,10 +743,6 @@ class HybridTableExtractor:
         print()
         return cells
 
-    # ============================================
-    # VISUALIZATION METHODS
-    # ============================================
-
     def visualize_all_combined(self, image: np.ndarray, borders: Dict,
                                cells: List[Dict], words: List[Dict],
                                output_path: str = 'viz_all.png'):
@@ -710,7 +754,6 @@ class HybridTableExtractor:
         img = Image.fromarray(image)
         draw = ImageDraw.Draw(img)
 
-        # 1. Draw cells (filled, semi-transparent effect with lighter colors)
         np.random.seed(42)
         for cell in cells:
             x1, y1, x2, y2 = cell['bbox_word_aggregate']
@@ -719,7 +762,6 @@ class HybridTableExtractor:
                      np.random.randint(150, 255))
             draw.rectangle([x1, y1, x2, y2], outline=color, width=2)
 
-        # 2. Draw borders (horizontal=RED, vertical=BLUE)
         for h_line in borders['horizontal']:
             y = int(h_line['position'])
             x1 = int(h_line['start'])
@@ -732,7 +774,6 @@ class HybridTableExtractor:
             y2 = int(v_line['end'])
             draw.line([(x, y1), (x, y2)], fill=(0, 0, 255), width=2)
 
-        # 3. Draw words (GREEN boxes with RED centers)
         for word in words:
             x1, y1, x2, y2 = word['bbox']
             draw.rectangle([x1, y1, x2, y2], outline=(0, 255, 0), width=1)
@@ -746,18 +787,11 @@ class HybridTableExtractor:
         print()
         return img
 
-    # ============================================
-    # MAIN PIPELINE FUNCTIONS (FIXED)
-    # ============================================
-
     def _process_single_table_region(self, table_img: np.ndarray,
                                      output_prefix: str, table_index: int) -> Optional[Dict]:
-        """
-        Helper function to run the full pipeline on a single cropped image region.
-        """
+        """Process a single table region"""
         print(f"\n--- Processing Table Region {table_index} ---")
 
-        # Save the cropped/full table image
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         table_save_path = os.path.join(BASE_DIR, "out", f"{output_prefix}_table{table_index}_00_region.png")
         os.makedirs(os.path.dirname(table_save_path), exist_ok=True)
@@ -766,26 +800,17 @@ class HybridTableExtractor:
 
         current_prefix = f"{output_prefix}_table{table_index}"
 
-        # Step 2: Extract borders (OpenCV)
         borders = self.extract_borders(table_img, debug_prefix=current_prefix)
-
-        # Step 3: Extract words (OCR)
         words = self.extract_words(table_img, debug_prefix=current_prefix)
 
         if len(words) == 0:
-            print(f"✗ No words detected for Table {table_index}! Skipping.")
-            return None
+            print(f"⚠️  WARNING: No words detected for Table {table_index}!")
+            print(f"   Check the saved OCR input: {current_prefix}_03a_ocr_input.png")
+            # Continue anyway to show borders
 
-        # Step 4: Map words to borders
         mappings = self.map_words_to_borders(words, borders)
-
-        # Step 5: Build border graph
         G_borders = self.build_border_graph(borders)
-
-        # Step 6: Build word graph
         G_words = self.build_word_graph(words)
-
-        # Step 7: Infer cells
         cells = self.infer_cells(mappings, debug_prefix=current_prefix)
 
         result = {
@@ -805,7 +830,6 @@ class HybridTableExtractor:
             }
         }
 
-        # Final combined visualization
         final_path = os.path.join(BASE_DIR, "out", f"{current_prefix}_99_final.png")
         self.visualize_all_combined(table_img, borders, cells, words, final_path)
 
@@ -814,66 +838,70 @@ class HybridTableExtractor:
 
     def process_table(self, image_path: str, output_prefix: str = 'output',
                       skip_table_detection: bool = False, visualize: bool = True,
-                      detection_threshold: float = 0.01) -> List[Dict[str, Any]]:
-        """
-        Complete pipeline that now processes ALL detected tables, using a very low
-        detection threshold by default to capture unclosed tables.
-        """
+                      detection_threshold: float = 0.03) -> List[Dict[str, Any]]:
+        """Complete pipeline - NOW RETURNS TABLE COORDS IMMEDIATELY AFTER DETECTION"""
         print("=" * 70)
         print(f"PROCESSING: {image_path}")
         print("=" * 70 + "\n")
 
-        # Load image
         image_pil = Image.open(image_path).convert("RGB")
         image_np = np.array(image_pil)
 
         all_results = []
 
-        # Step 1: Table Transformer detects table REGION (or skip)
         if not skip_table_detection:
-            # Get all tables using the extremely low detection_threshold (0.01)
+            # STEP 1: GET TABLE COORDINATES IMMEDIATELY
             tables = self.detect_tables(image_pil, debug_prefix=output_prefix,
                                         detection_threshold=detection_threshold)
 
             if len(tables) == 0:
-                print("✗ No tables detected! Attempting to process the full image as one table.")
-                # Process the full image as Table 1
+                print("✗ No tables detected! Processing full image as one table.")
                 result = self._process_single_table_region(image_np, output_prefix, table_index=1)
                 if result:
                     all_results.append(result)
             else:
-                # Iterate over ALL detected tables
+                # Process each detected table
                 for i, table in enumerate(tables):
+                    print(f"\n{'=' * 70}")
+                    print(f"PROCESSING TABLE {i + 1}/{len(tables)}")
+                    print(f"BBox: {table['bbox']}, Size: {table['width']}x{table['height']}")
+                    print(f"{'=' * 70}")
+
                     x1, y1, x2, y2 = table['bbox']
-                    # Crop the image region for the current table
                     table_img = image_np[y1:y2, x1:x2]
 
-                    # Run the pipeline on the single cropped region
                     result = self._process_single_table_region(table_img, output_prefix, table_index=i + 1)
                     if result:
+                        # Add original table detection info to result
+                        result['detected_bbox'] = table['bbox']
+                        result['detection_confidence'] = table['confidence']
                         all_results.append(result)
         else:
-            print("⊗ Skipping table detection - processing full image as single table.")
-            # Process the full image as Table 1
+            print("⊗ Skipping table detection - processing full image.")
             result = self._process_single_table_region(image_np, output_prefix, table_index=1)
             if result:
                 all_results.append(result)
 
-        print("=" * 70)
+        print("\n" + "=" * 70)
         print("PIPELINE COMPLETE - FINAL SUMMARY")
         print("=" * 70)
-        print(f"Total tables processed: {len(all_results)}")
+        print(f"Total tables processed: {len(all_results)}\n")
 
         for result in all_results:
-            print(f"  Table {result['table_index']}:")
-            print(f"    - Words extracted: {result['stats']['num_words']}")
-            print(f"    - Cells inferred: {result['stats']['num_cells']}")
+            print(f"  📊 Table {result['table_index']}:")
+            if 'detected_bbox' in result:
+                print(f"     - Detection BBox: {result['detected_bbox']}")
+                print(f"     - Confidence: {result['detection_confidence']:.3f}")
+            print(f"     - Words extracted: {result['stats']['num_words']}")
+            print(f"     - Cells inferred: {result['stats']['num_cells']}")
+            if result['stats']['num_words'] == 0:
+                print(f"     ⚠️  NO WORDS - Check OCR input image!")
         print()
 
         return all_results
 
     def export_json(self, result_list: List[Dict[str, Any]], output_prefix: str):
-        """Export results (list of table results) to separate JSON files."""
+        """Export results to JSON"""
 
         def convert(obj):
             if isinstance(obj, (np.integer, np.floating)):
@@ -894,10 +922,11 @@ class HybridTableExtractor:
             table_idx = result['table_index']
             output_path = os.path.join(output_dir, f"{output_prefix}_table{table_idx}_data.json")
 
-            # Prepare data for this table
             data = {
                 'table_index': table_idx,
                 'table_image_shape': result['table_image_shape'],
+                'detected_bbox': result.get('detected_bbox'),
+                'detection_confidence': result.get('detection_confidence'),
                 'stats': convert(result['stats']),
                 'borders': convert(result['borders']),
                 'word_to_border_mappings': convert(result['word_border_mappings']),

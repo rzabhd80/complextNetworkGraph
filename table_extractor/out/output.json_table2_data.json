@@ -1,0 +1,835 @@
+{
+  "table_index": 2,
+  "table_image_shape": [
+    585,
+    670
+  ],
+  "detected_bbox": [
+    125,
+    835,
+    795,
+    1420
+  ],
+  "detection_confidence": 0.07441151887178421,
+  "stats": {
+    "num_h_lines": 47,
+    "num_v_lines": 0,
+    "num_words": 0,
+    "num_cells": 0
+  },
+  "borders": {
+    "horizontal": [
+      {
+        "line_id": "horizontal_merged_0",
+        "type": "horizontal",
+        "position": 4.617647058823529,
+        "start": 3.0,
+        "end": 622.0,
+        "length": 619.0
+      },
+      {
+        "line_id": "horizontal_merged_1",
+        "type": "horizontal",
+        "position": 13.333333333333334,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0
+      },
+      {
+        "line_id": "horizontal_merged_2",
+        "type": "horizontal",
+        "position": 21.5,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0
+      },
+      {
+        "line_id": "horizontal_merged_3",
+        "type": "horizontal",
+        "position": 36.57142857142857,
+        "start": 3.0,
+        "end": 427.0,
+        "length": 424.0
+      },
+      {
+        "line_id": "horizontal_merged_4",
+        "type": "horizontal",
+        "position": 45.85,
+        "start": 42.0,
+        "end": 427.0,
+        "length": 385.0
+      },
+      {
+        "line_id": "horizontal_merged_5",
+        "type": "horizontal",
+        "position": 56.9,
+        "start": 72.0,
+        "end": 215.0,
+        "length": 143.0
+      },
+      {
+        "line_id": "horizontal_merged_6",
+        "type": "horizontal",
+        "position": 72.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0
+      },
+      {
+        "line_id": "horizontal_merged_7",
+        "type": "horizontal",
+        "position": 86.40625,
+        "start": 40.0,
+        "end": 427.0,
+        "length": 387.0
+      },
+      {
+        "line_id": "horizontal_merged_8",
+        "type": "horizontal",
+        "position": 94.25,
+        "start": 42.0,
+        "end": 427.0,
+        "length": 385.0
+      },
+      {
+        "line_id": "horizontal_merged_9",
+        "type": "horizontal",
+        "position": 107.0,
+        "start": 72.0,
+        "end": 215.0,
+        "length": 143.0
+      },
+      {
+        "line_id": "horizontal_merged_10",
+        "type": "horizontal",
+        "position": 119.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0
+      },
+      {
+        "line_id": "horizontal_merged_11",
+        "type": "horizontal",
+        "position": 123.5,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0
+      },
+      {
+        "line_id": "horizontal_merged_12",
+        "type": "horizontal",
+        "position": 137.72727272727272,
+        "start": 41.0,
+        "end": 428.0,
+        "length": 387.0
+      },
+      {
+        "line_id": "horizontal_merged_13",
+        "type": "horizontal",
+        "position": 144.8,
+        "start": 41.0,
+        "end": 428.0,
+        "length": 387.0
+      },
+      {
+        "line_id": "horizontal_merged_14",
+        "type": "horizontal",
+        "position": 177.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0
+      },
+      {
+        "line_id": "horizontal_merged_15",
+        "type": "horizontal",
+        "position": 192.97058823529412,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0
+      },
+      {
+        "line_id": "horizontal_merged_16",
+        "type": "horizontal",
+        "position": 199.71428571428572,
+        "start": 73.0,
+        "end": 428.0,
+        "length": 355.0
+      },
+      {
+        "line_id": "horizontal_merged_17",
+        "type": "horizontal",
+        "position": 232.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0
+      },
+      {
+        "line_id": "horizontal_merged_18",
+        "type": "horizontal",
+        "position": 247.79545454545453,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0
+      },
+      {
+        "line_id": "horizontal_merged_19",
+        "type": "horizontal",
+        "position": 254.71428571428572,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0
+      },
+      {
+        "line_id": "horizontal_merged_20",
+        "type": "horizontal",
+        "position": 288.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0
+      },
+      {
+        "line_id": "horizontal_merged_21",
+        "type": "horizontal",
+        "position": 303.57142857142856,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0
+      },
+      {
+        "line_id": "horizontal_merged_22",
+        "type": "horizontal",
+        "position": 312.0,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0
+      },
+      {
+        "line_id": "horizontal_merged_23",
+        "type": "horizontal",
+        "position": 325.14285714285717,
+        "start": 72.0,
+        "end": 146.0,
+        "length": 74.0
+      },
+      {
+        "line_id": "horizontal_merged_24",
+        "type": "horizontal",
+        "position": 338.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0
+      },
+      {
+        "line_id": "horizontal_merged_25",
+        "type": "horizontal",
+        "position": 353.5192307692308,
+        "start": 41.0,
+        "end": 623.0,
+        "length": 582.0
+      },
+      {
+        "line_id": "horizontal_merged_26",
+        "type": "horizontal",
+        "position": 361.11538461538464,
+        "start": 41.0,
+        "end": 623.0,
+        "length": 582.0
+      },
+      {
+        "line_id": "horizontal_merged_27",
+        "type": "horizontal",
+        "position": 373.5,
+        "start": 72.0,
+        "end": 122.0,
+        "length": 50.0
+      },
+      {
+        "line_id": "horizontal_merged_28",
+        "type": "horizontal",
+        "position": 389.0,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0
+      },
+      {
+        "line_id": "horizontal_merged_29",
+        "type": "horizontal",
+        "position": 403.10869565217394,
+        "start": 2.0,
+        "end": 624.0,
+        "length": 622.0
+      },
+      {
+        "line_id": "horizontal_merged_30",
+        "type": "horizontal",
+        "position": 411.2,
+        "start": 42.0,
+        "end": 623.0,
+        "length": 581.0
+      },
+      {
+        "line_id": "horizontal_merged_31",
+        "type": "horizontal",
+        "position": 423.3125,
+        "start": 72.0,
+        "end": 167.0,
+        "length": 95.0
+      },
+      {
+        "line_id": "horizontal_merged_32",
+        "type": "horizontal",
+        "position": 435.875,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0
+      },
+      {
+        "line_id": "horizontal_merged_33",
+        "type": "horizontal",
+        "position": 440.5,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0
+      },
+      {
+        "line_id": "horizontal_merged_34",
+        "type": "horizontal",
+        "position": 454.39285714285717,
+        "start": 3.0,
+        "end": 624.0,
+        "length": 621.0
+      },
+      {
+        "line_id": "horizontal_merged_35",
+        "type": "horizontal",
+        "position": 461.9642857142857,
+        "start": 73.0,
+        "end": 624.0,
+        "length": 551.0
+      },
+      {
+        "line_id": "horizontal_merged_36",
+        "type": "horizontal",
+        "position": 476.2857142857143,
+        "start": 72.0,
+        "end": 149.0,
+        "length": 77.0
+      },
+      {
+        "line_id": "horizontal_merged_37",
+        "type": "horizontal",
+        "position": 487.25,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0
+      },
+      {
+        "line_id": "horizontal_merged_38",
+        "type": "horizontal",
+        "position": 494.5,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0
+      },
+      {
+        "line_id": "horizontal_merged_39",
+        "type": "horizontal",
+        "position": 509.24,
+        "start": 3.0,
+        "end": 427.0,
+        "length": 424.0
+      },
+      {
+        "line_id": "horizontal_merged_40",
+        "type": "horizontal",
+        "position": 516.9444444444445,
+        "start": 42.0,
+        "end": 427.0,
+        "length": 385.0
+      },
+      {
+        "line_id": "horizontal_merged_41",
+        "type": "horizontal",
+        "position": 531.6666666666666,
+        "start": 72.0,
+        "end": 149.0,
+        "length": 77.0
+      },
+      {
+        "line_id": "horizontal_merged_42",
+        "type": "horizontal",
+        "position": 542.25,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0
+      },
+      {
+        "line_id": "horizontal_merged_43",
+        "type": "horizontal",
+        "position": 549.5,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0
+      },
+      {
+        "line_id": "horizontal_merged_44",
+        "type": "horizontal",
+        "position": 564.25,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0
+      },
+      {
+        "line_id": "horizontal_merged_45",
+        "type": "horizontal",
+        "position": 571.5416666666666,
+        "start": 73.0,
+        "end": 428.0,
+        "length": 355.0
+      },
+      {
+        "line_id": "horizontal_merged_46",
+        "type": "horizontal",
+        "position": 583.0,
+        "start": 73.0,
+        "end": 147.0,
+        "length": 74.0
+      }
+    ],
+    "vertical": []
+  },
+  "word_to_border_mappings": [],
+  "inferred_cells": [],
+  "border_graph": {
+    "nodes": [
+      {
+        "id": "horizontal_merged_0",
+        "type": "horizontal",
+        "position": 4.617647058823529,
+        "start": 3.0,
+        "end": 622.0,
+        "length": 619.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_1",
+        "type": "horizontal",
+        "position": 13.333333333333334,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_2",
+        "type": "horizontal",
+        "position": 21.5,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_3",
+        "type": "horizontal",
+        "position": 36.57142857142857,
+        "start": 3.0,
+        "end": 427.0,
+        "length": 424.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_4",
+        "type": "horizontal",
+        "position": 45.85,
+        "start": 42.0,
+        "end": 427.0,
+        "length": 385.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_5",
+        "type": "horizontal",
+        "position": 56.9,
+        "start": 72.0,
+        "end": 215.0,
+        "length": 143.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_6",
+        "type": "horizontal",
+        "position": 72.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_7",
+        "type": "horizontal",
+        "position": 86.40625,
+        "start": 40.0,
+        "end": 427.0,
+        "length": 387.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_8",
+        "type": "horizontal",
+        "position": 94.25,
+        "start": 42.0,
+        "end": 427.0,
+        "length": 385.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_9",
+        "type": "horizontal",
+        "position": 107.0,
+        "start": 72.0,
+        "end": 215.0,
+        "length": 143.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_10",
+        "type": "horizontal",
+        "position": 119.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_11",
+        "type": "horizontal",
+        "position": 123.5,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_12",
+        "type": "horizontal",
+        "position": 137.72727272727272,
+        "start": 41.0,
+        "end": 428.0,
+        "length": 387.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_13",
+        "type": "horizontal",
+        "position": 144.8,
+        "start": 41.0,
+        "end": 428.0,
+        "length": 387.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_14",
+        "type": "horizontal",
+        "position": 177.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_15",
+        "type": "horizontal",
+        "position": 192.97058823529412,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_16",
+        "type": "horizontal",
+        "position": 199.71428571428572,
+        "start": 73.0,
+        "end": 428.0,
+        "length": 355.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_17",
+        "type": "horizontal",
+        "position": 232.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_18",
+        "type": "horizontal",
+        "position": 247.79545454545453,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_19",
+        "type": "horizontal",
+        "position": 254.71428571428572,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_20",
+        "type": "horizontal",
+        "position": 288.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_21",
+        "type": "horizontal",
+        "position": 303.57142857142856,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_22",
+        "type": "horizontal",
+        "position": 312.0,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_23",
+        "type": "horizontal",
+        "position": 325.14285714285717,
+        "start": 72.0,
+        "end": 146.0,
+        "length": 74.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_24",
+        "type": "horizontal",
+        "position": 338.0,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_25",
+        "type": "horizontal",
+        "position": 353.5192307692308,
+        "start": 41.0,
+        "end": 623.0,
+        "length": 582.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_26",
+        "type": "horizontal",
+        "position": 361.11538461538464,
+        "start": 41.0,
+        "end": 623.0,
+        "length": 582.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_27",
+        "type": "horizontal",
+        "position": 373.5,
+        "start": 72.0,
+        "end": 122.0,
+        "length": 50.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_28",
+        "type": "horizontal",
+        "position": 389.0,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_29",
+        "type": "horizontal",
+        "position": 403.10869565217394,
+        "start": 2.0,
+        "end": 624.0,
+        "length": 622.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_30",
+        "type": "horizontal",
+        "position": 411.2,
+        "start": 42.0,
+        "end": 623.0,
+        "length": 581.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_31",
+        "type": "horizontal",
+        "position": 423.3125,
+        "start": 72.0,
+        "end": 167.0,
+        "length": 95.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_32",
+        "type": "horizontal",
+        "position": 435.875,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_33",
+        "type": "horizontal",
+        "position": 440.5,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_34",
+        "type": "horizontal",
+        "position": 454.39285714285717,
+        "start": 3.0,
+        "end": 624.0,
+        "length": 621.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_35",
+        "type": "horizontal",
+        "position": 461.9642857142857,
+        "start": 73.0,
+        "end": 624.0,
+        "length": 551.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_36",
+        "type": "horizontal",
+        "position": 476.2857142857143,
+        "start": 72.0,
+        "end": 149.0,
+        "length": 77.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_37",
+        "type": "horizontal",
+        "position": 487.25,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_38",
+        "type": "horizontal",
+        "position": 494.5,
+        "start": 0.0,
+        "end": 626.0,
+        "length": 626.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_39",
+        "type": "horizontal",
+        "position": 509.24,
+        "start": 3.0,
+        "end": 427.0,
+        "length": 424.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_40",
+        "type": "horizontal",
+        "position": 516.9444444444445,
+        "start": 42.0,
+        "end": 427.0,
+        "length": 385.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_41",
+        "type": "horizontal",
+        "position": 531.6666666666666,
+        "start": 72.0,
+        "end": 149.0,
+        "length": 77.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_42",
+        "type": "horizontal",
+        "position": 542.25,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_43",
+        "type": "horizontal",
+        "position": 549.5,
+        "start": 40.0,
+        "end": 626.0,
+        "length": 586.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_44",
+        "type": "horizontal",
+        "position": 564.25,
+        "start": 72.0,
+        "end": 428.0,
+        "length": 356.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_45",
+        "type": "horizontal",
+        "position": 571.5416666666666,
+        "start": 73.0,
+        "end": 428.0,
+        "length": 355.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_46",
+        "type": "horizontal",
+        "position": 583.0,
+        "start": 73.0,
+        "end": 147.0,
+        "length": 74.0,
+        "node_type": "border"
+      }
+    ],
+    "edges": []
+  },
+  "word_graph": {
+    "nodes": [],
+    "edges": []
+  }
+}

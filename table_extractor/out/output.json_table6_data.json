@@ -1,0 +1,240 @@
+{
+  "table_index": 6,
+  "table_image_shape": [
+    142,
+    300
+  ],
+  "detected_bbox": [
+    731,
+    398,
+    1031,
+    540
+  ],
+  "detection_confidence": 0.8728673458099365,
+  "stats": {
+    "num_h_lines": 12,
+    "num_v_lines": 0,
+    "num_words": 0,
+    "num_cells": 0
+  },
+  "borders": {
+    "horizontal": [
+      {
+        "line_id": "horizontal_merged_0",
+        "type": "horizontal",
+        "position": 7.388888888888889,
+        "start": 55.0,
+        "end": 164.0,
+        "length": 109.0
+      },
+      {
+        "line_id": "horizontal_merged_1",
+        "type": "horizontal",
+        "position": 16.166666666666668,
+        "start": 55.0,
+        "end": 299.0,
+        "length": 244.0
+      },
+      {
+        "line_id": "horizontal_merged_2",
+        "type": "horizontal",
+        "position": 23.5,
+        "start": 55.0,
+        "end": 299.0,
+        "length": 244.0
+      },
+      {
+        "line_id": "horizontal_merged_3",
+        "type": "horizontal",
+        "position": 38.0,
+        "start": 63.0,
+        "end": 291.0,
+        "length": 228.0
+      },
+      {
+        "line_id": "horizontal_merged_4",
+        "type": "horizontal",
+        "position": 46.57692307692308,
+        "start": 63.0,
+        "end": 292.0,
+        "length": 229.0
+      },
+      {
+        "line_id": "horizontal_merged_5",
+        "type": "horizontal",
+        "position": 64.85714285714286,
+        "start": 63.0,
+        "end": 291.0,
+        "length": 228.0
+      },
+      {
+        "line_id": "horizontal_merged_6",
+        "type": "horizontal",
+        "position": 73.91666666666667,
+        "start": 63.0,
+        "end": 292.0,
+        "length": 229.0
+      },
+      {
+        "line_id": "horizontal_merged_7",
+        "type": "horizontal",
+        "position": 92.17857142857143,
+        "start": 63.0,
+        "end": 291.0,
+        "length": 228.0
+      },
+      {
+        "line_id": "horizontal_merged_8",
+        "type": "horizontal",
+        "position": 101.5,
+        "start": 63.0,
+        "end": 291.0,
+        "length": 228.0
+      },
+      {
+        "line_id": "horizontal_merged_9",
+        "type": "horizontal",
+        "position": 111.25,
+        "start": 65.0,
+        "end": 290.0,
+        "length": 225.0
+      },
+      {
+        "line_id": "horizontal_merged_10",
+        "type": "horizontal",
+        "position": 121.53333333333333,
+        "start": 64.0,
+        "end": 290.0,
+        "length": 226.0
+      },
+      {
+        "line_id": "horizontal_merged_11",
+        "type": "horizontal",
+        "position": 130.36363636363637,
+        "start": 63.0,
+        "end": 292.0,
+        "length": 229.0
+      }
+    ],
+    "vertical": []
+  },
+  "word_to_border_mappings": [],
+  "inferred_cells": [],
+  "border_graph": {
+    "nodes": [
+      {
+        "id": "horizontal_merged_0",
+        "type": "horizontal",
+        "position": 7.388888888888889,
+        "start": 55.0,
+        "end": 164.0,
+        "length": 109.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_1",
+        "type": "horizontal",
+        "position": 16.166666666666668,
+        "start": 55.0,
+        "end": 299.0,
+        "length": 244.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_2",
+        "type": "horizontal",
+        "position": 23.5,
+        "start": 55.0,
+        "end": 299.0,
+        "length": 244.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_3",
+        "type": "horizontal",
+        "position": 38.0,
+        "start": 63.0,
+        "end": 291.0,
+        "length": 228.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_4",
+        "type": "horizontal",
+        "position": 46.57692307692308,
+        "start": 63.0,
+        "end": 292.0,
+        "length": 229.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_5",
+        "type": "horizontal",
+        "position": 64.85714285714286,
+        "start": 63.0,
+        "end": 291.0,
+        "length": 228.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_6",
+        "type": "horizontal",
+        "position": 73.91666666666667,
+        "start": 63.0,
+        "end": 292.0,
+        "length": 229.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_7",
+        "type": "horizontal",
+        "position": 92.17857142857143,
+        "start": 63.0,
+        "end": 291.0,
+        "length": 228.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_8",
+        "type": "horizontal",
+        "position": 101.5,
+        "start": 63.0,
+        "end": 291.0,
+        "length": 228.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_9",
+        "type": "horizontal",
+        "position": 111.25,
+        "start": 65.0,
+        "end": 290.0,
+        "length": 225.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_10",
+        "type": "horizontal",
+        "position": 121.53333333333333,
+        "start": 64.0,
+        "end": 290.0,
+        "length": 226.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_11",
+        "type": "horizontal",
+        "position": 130.36363636363637,
+        "start": 63.0,
+        "end": 292.0,
+        "length": 229.0,
+        "node_type": "border"
+      }
+    ],
+    "edges": []
+  },
+  "word_graph": {
+    "nodes": [],
+    "edges": []
+  }
+}

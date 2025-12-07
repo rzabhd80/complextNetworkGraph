@@ -1,0 +1,172 @@
+{
+  "table_index": 7,
+  "table_image_shape": [
+    115,
+    236
+  ],
+  "detected_bbox": [
+    658,
+    477,
+    894,
+    592
+  ],
+  "detection_confidence": 0.11844319105148315,
+  "stats": {
+    "num_h_lines": 8,
+    "num_v_lines": 0,
+    "num_words": 0,
+    "num_cells": 0
+  },
+  "borders": {
+    "horizontal": [
+      {
+        "line_id": "horizontal_merged_0",
+        "type": "horizontal",
+        "position": 16.166666666666668,
+        "start": 136.0,
+        "end": 214.0,
+        "length": 78.0
+      },
+      {
+        "line_id": "horizontal_merged_1",
+        "type": "horizontal",
+        "position": 25.5,
+        "start": 136.0,
+        "end": 235.0,
+        "length": 99.0
+      },
+      {
+        "line_id": "horizontal_merged_2",
+        "type": "horizontal",
+        "position": 43.5,
+        "start": 137.0,
+        "end": 235.0,
+        "length": 98.0
+      },
+      {
+        "line_id": "horizontal_merged_3",
+        "type": "horizontal",
+        "position": 52.916666666666664,
+        "start": 136.0,
+        "end": 235.0,
+        "length": 99.0
+      },
+      {
+        "line_id": "horizontal_merged_4",
+        "type": "horizontal",
+        "position": 73.0,
+        "start": 134.0,
+        "end": 235.0,
+        "length": 101.0
+      },
+      {
+        "line_id": "horizontal_merged_5",
+        "type": "horizontal",
+        "position": 92.20588235294117,
+        "start": 0.0,
+        "end": 235.0,
+        "length": 235.0
+      },
+      {
+        "line_id": "horizontal_merged_6",
+        "type": "horizontal",
+        "position": 102.1875,
+        "start": 0.0,
+        "end": 235.0,
+        "length": 235.0
+      },
+      {
+        "line_id": "horizontal_merged_7",
+        "type": "horizontal",
+        "position": 107.66666666666667,
+        "start": 0.0,
+        "end": 235.0,
+        "length": 235.0
+      }
+    ],
+    "vertical": []
+  },
+  "word_to_border_mappings": [],
+  "inferred_cells": [],
+  "border_graph": {
+    "nodes": [
+      {
+        "id": "horizontal_merged_0",
+        "type": "horizontal",
+        "position": 16.166666666666668,
+        "start": 136.0,
+        "end": 214.0,
+        "length": 78.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_1",
+        "type": "horizontal",
+        "position": 25.5,
+        "start": 136.0,
+        "end": 235.0,
+        "length": 99.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_2",
+        "type": "horizontal",
+        "position": 43.5,
+        "start": 137.0,
+        "end": 235.0,
+        "length": 98.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_3",
+        "type": "horizontal",
+        "position": 52.916666666666664,
+        "start": 136.0,
+        "end": 235.0,
+        "length": 99.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_4",
+        "type": "horizontal",
+        "position": 73.0,
+        "start": 134.0,
+        "end": 235.0,
+        "length": 101.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_5",
+        "type": "horizontal",
+        "position": 92.20588235294117,
+        "start": 0.0,
+        "end": 235.0,
+        "length": 235.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_6",
+        "type": "horizontal",
+        "position": 102.1875,
+        "start": 0.0,
+        "end": 235.0,
+        "length": 235.0,
+        "node_type": "border"
+      },
+      {
+        "id": "horizontal_merged_7",
+        "type": "horizontal",
+        "position": 107.66666666666667,
+        "start": 0.0,
+        "end": 235.0,
+        "length": 235.0,
+        "node_type": "border"
+      }
+    ],
+    "edges": []
+  },
+  "word_graph": {
+    "nodes": [],
+    "edges": []
+  }
+}
