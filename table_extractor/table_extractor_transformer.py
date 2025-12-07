@@ -379,9 +379,12 @@ class HybridTableExtractor:
         print("🔍 Running OCR...")
         result = self.ocr.ocr(image)
 
-        # EXTENSIVE DEBUG OUTPUT
-        print(f"\n🔍 OCR Raw Result Type: {type(result)}")
-        print(f"🔍 OCR Raw Result Length: {len(result) if result else 0}")
+        # COMPLETE DEBUG - DUMP EVERYTHING
+        print(f"\n{'=' * 60}")
+        print("🔍 COMPLETE OCR DEBUG OUTPUT")
+        print(f"{'=' * 60}")
+        print(f"Result type: {type(result)}")
+        print(f"Result length: {len(result) if result else 'N/A'}")
 
         if result is None:
             print("✗ OCR returned None!")
@@ -395,90 +398,171 @@ class HybridTableExtractor:
             print("✗ OCR result[0] is None!")
             return []
 
-        # Debug: Check what result[0] actually is
-        print(f"🔍 OCR result[0] type: {type(result[0])}")
+        print(f"\nresult[0] type: {type(result[0])}")
+
+        # DUMP THE ENTIRE result[0] STRUCTURE
+        if isinstance(result[0], dict):
+            print(f"\n📦 result[0] is a DICT with keys: {list(result[0].keys())}")
+            for key, value in result[0].items():
+                val_type = type(value)
+                val_len = len(value) if hasattr(value, '__len__') and not isinstance(value,
+                                                                                     (str, int, float)) else 'N/A'
+                print(f"   '{key}': type={val_type}, len={val_len}")
+                # Only show first item if it's a list/tuple
+                if isinstance(value, (list, tuple)) and len(value) > 0 and len(value) < 100:
+                    try:
+                        print(f"      First item: {value[0]}")
+                    except:
+                        print(f"      First item: <cannot display>")
+        elif isinstance(result[0], (list, tuple)):
+            print(f"\n📦 result[0] is a LIST/TUPLE with {len(result[0])} items")
+            if len(result[0]) > 0:
+                print(f"   First item type: {type(result[0][0])}")
+                print(f"   First item: {result[0][0]}")
+                if len(result[0]) > 1:
+                    print(f"   Second item type: {type(result[0][1])}")
+                    print(f"   Second item: {result[0][1]}")
+        else:
+            print(f"\n❌ result[0] is UNEXPECTED TYPE: {type(result[0])}")
+            print(f"   Value: {result[0]}")
+
+        print(f"{'=' * 60}\n")
 
         # Handle different PaddleOCR return formats
-        # Sometimes it returns a dict with keys, sometimes a list
         if isinstance(result[0], dict):
-            print("🔍 OCR returned dict format - extracting 'rec_res' key...")
-            if 'rec_res' in result[0]:
+            print("🔍 Detected DICT format - searching for detections...")
+            # Try common keys in order of priority
+            possible_keys = [
+                ('rec_texts', 'rec_polys', 'rec_scores'),  # New PaddleX format
+                ('rec_texts', 'rec_boxes', 'rec_scores'),  # Alternative box format
+                ('rec_res', None, None),  # Legacy format
+                ('dt_polys', None, None),  # Detection only
+            ]
+
+            detections = None
+            texts = None
+            boxes = None
+            scores = None
+
+            # Check which format we have
+            dict_keys = list(result[0].keys())
+            print(f"   Available keys: {dict_keys}")
+
+            # New PaddleX format with separate arrays
+            if 'rec_texts' in result[0]:
+                print("   ✓ Found 'rec_texts' key - using PaddleX format")
+                texts = result[0]['rec_texts']
+                boxes = result[0].get('rec_polys') or result[0].get('rec_boxes') or result[0].get('dt_polys')
+                scores = result[0].get('rec_scores', [1.0] * len(texts))
+
+                if boxes is None:
+                    print("   ✗ No bounding boxes found!")
+                    return []
+
+                # Combine into standard format
+                detections = []
+                for i in range(len(texts)):
+                    if i < len(boxes):
+                        detections.append([boxes[i], (texts[i], scores[i] if i < len(scores) else 1.0)])
+
+                print(f"   ✓ Combined {len(detections)} text+box pairs")
+
+            # Legacy format
+            elif 'rec_res' in result[0]:
+                print("   ✓ Found 'rec_res' key")
                 detections = result[0]['rec_res']
-            else:
-                print(f"✗ Dict keys found: {list(result[0].keys())}")
-                print("✗ Cannot find text detections in dict format!")
+
+            if detections is None or len(detections) == 0:
+                print(f"   ✗ Could not extract detections from keys: {dict_keys}")
                 return []
         elif isinstance(result[0], (list, tuple)):
+            print("🔍 Detected LIST format")
             detections = result[0]
         else:
             print(f"✗ Unexpected result[0] type: {type(result[0])}")
             return []
 
-        print(f"✓ OCR detected {len(detections)} text regions")
+        print(f"✓ Found {len(detections)} detections to process\n")
 
-        # Show first few detections for debugging
-        try:
-            if len(detections) > 0:
-                print("\n📝 First few OCR detections:")
-                # Convert to list if it's not already
-                det_list = list(detections) if hasattr(detections, '__iter__') else []
-                for idx, line in enumerate(det_list[:3]):
-                    # Try to extract text from different formats
-                    if isinstance(line, (list, tuple)) and len(line) >= 2:
-                        text = line[1][0] if isinstance(line[1], (list, tuple)) else line[1]
-                        print(f"  {idx + 1}. {text}")
-                    else:
-                        print(f"  {idx + 1}. {line}")
-        except Exception as e:
-            print(f"⚠️  Could not display sample detections: {e}")
+        # Show sample detections with FULL structure
+        if len(detections) > 0:
+            print("📝 Sample detection structures:")
+            for idx in range(min(2, len(detections))):
+                print(f"\n  Detection {idx + 1}:")
+                print(f"    Type: {type(detections[idx])}")
+                print(f"    Value: {detections[idx]}")
 
         words = []
         word_id = 0
 
-        for line in detections:
-            # Handle dict format (newer PaddleOCR)
-            if isinstance(line, dict):
-                if 'text' in line and 'bbox' in line:
-                    text = line['text']
-                    bbox_points = line['bbox']
-                    confidence = line.get('score', 1.0)
+        print(f"\n🔄 Processing {len(detections)} detections...")
+
+        for idx, line in enumerate(detections):
+            try:
+                # Handle dict format (newer PaddleOCR)
+                if isinstance(line, dict):
+                    if 'text' in line and 'bbox' in line:
+                        text = line['text']
+                        bbox_points = line['bbox']
+                        confidence = line.get('score', 1.0)
+                    else:
+                        print(f"  ⚠️  Detection {idx}: dict missing 'text' or 'bbox' keys: {line.keys()}")
+                        continue
+                # Handle list/tuple format (older PaddleOCR)
+                elif isinstance(line, (list, tuple)) and len(line) >= 2:
+                    bbox_points = line[0]
+                    text_conf = line[1]
+
+                    if isinstance(text_conf, (list, tuple)) and len(text_conf) == 2:
+                        text, confidence = text_conf
+                    elif isinstance(text_conf, str):
+                        text, confidence = text_conf, 1.0
+                    else:
+                        print(f"  ⚠️  Detection {idx}: unexpected text_conf format: {type(text_conf)}")
+                        continue
                 else:
+                    print(
+                        f"  ⚠️  Detection {idx}: unexpected format - type={type(line)}, len={len(line) if hasattr(line, '__len__') else 'N/A'}")
                     continue
-            # Handle list/tuple format (older PaddleOCR)
-            elif isinstance(line, (list, tuple)) and len(line) >= 2:
-                bbox_points = line[0]
-                text_conf = line[1]
 
-                if isinstance(text_conf, (list, tuple)) and len(text_conf) == 2:
-                    text, confidence = text_conf
-                elif isinstance(text_conf, str):
-                    text, confidence = text_conf, 1.0
+                # Skip empty text
+                if not text or (isinstance(text, str) and text.strip() == ''):
+                    print(f"  ⚠️  Detection {idx}: empty text, skipping")
+                    continue
+
+                # Extract bounding box coordinates
+                # Handle numpy arrays or lists
+                if isinstance(bbox_points, np.ndarray):
+                    bbox_points = bbox_points.tolist()
+
+                if isinstance(bbox_points, (list, tuple)) and len(bbox_points) >= 4:
+                    # bbox_points should be [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
+                    try:
+                        x_coords = [point[0] for point in bbox_points]
+                        y_coords = [point[1] for point in bbox_points]
+                        x1, y1 = min(x_coords), min(y_coords)
+                        x2, y2 = max(x_coords), max(y_coords)
+                    except (IndexError, TypeError) as e:
+                        print(f"  ⚠️  Detection {idx}: bbox coordinate extraction failed: {e}")
+                        continue
                 else:
+                    print(f"  ⚠️  Detection {idx}: invalid bbox format: {bbox_points}")
                     continue
-            else:
+
+                words.append({
+                    'word_id': f"word_{word_id}",
+                    'text': text,
+                    'bbox': [int(x1), int(y1), int(x2), int(y2)],
+                    'center': [(x1 + x2) / 2, (y1 + y2) / 2],
+                    'confidence': float(confidence)
+                })
+                word_id += 1
+
+            except Exception as e:
+                print(f"  ❌ Detection {idx} failed: {e}")
                 continue
 
-            # Skip empty text
-            if not text or (isinstance(text, str) and text.strip() == ''):
-                continue
-
-            # Extract bounding box coordinates
-            if isinstance(bbox_points, (list, tuple)):
-                x_coords = [point[0] for point in bbox_points]
-                y_coords = [point[1] for point in bbox_points]
-                x1, y1 = min(x_coords), min(y_coords)
-                x2, y2 = max(x_coords), max(y_coords)
-            else:
-                continue
-
-            words.append({
-                'word_id': f"word_{word_id}",
-                'text': text,
-                'bbox': [int(x1), int(y1), int(x2), int(y2)],
-                'center': [(x1 + x2) / 2, (y1 + y2) / 2],
-                'confidence': float(confidence)
-            })
-            word_id += 1
+        print(f"\n✓ Successfully extracted {len(words)} words from {len(detections)} detections")
 
         # SAVE WORD VISUALIZATION
         word_vis = Image.fromarray(image)
@@ -668,6 +752,10 @@ class HybridTableExtractor:
             print("✗ No words to build graph from")
             return G
 
+        if len(words) == 1:
+            print("✓ Word Graph: 1 node, 0 edges (single word)")
+            return G
+
         word_centers = np.array([w['center'] for w in words])
         word_ids = [w['word_id'] for w in words]
 
@@ -677,7 +765,12 @@ class HybridTableExtractor:
 
             distances = np.sqrt(np.sum((word_centers - word_centers[i]) ** 2, axis=1))
 
-            k_indices = np.argpartition(distances, min(k + 1, len(distances)))[1:k + 1]
+            # Adjust k if we have fewer words than k+1
+            actual_k = min(k, len(words) - 1)
+            if actual_k == 0:
+                continue
+
+            k_indices = np.argpartition(distances, actual_k)[1:actual_k + 1]
 
             for j_idx in k_indices:
                 if j_idx >= len(words):

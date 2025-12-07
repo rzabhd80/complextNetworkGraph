@@ -14,7 +14,7 @@
   "stats": {
     "num_h_lines": 16,
     "num_v_lines": 3,
-    "num_words": 0,
+    "num_words": 9,
     "num_cells": 0
   },
   "borders": {
@@ -175,7 +175,242 @@
       }
     ]
   },
-  "word_to_border_mappings": [],
+  "word_to_border_mappings": [
+    {
+      "word_id": "word_0",
+      "word_text": "annum",
+      "word_bbox": [
+        213,
+        564,
+        268,
+        578
+      ],
+      "word_center": [
+        240.5,
+        571.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_15",
+          "position": 205.66666666666666,
+          "distance": 365.33333333333337
+        },
+        "left": {
+          "line_id": "vertical_merged_2",
+          "position": 59.5,
+          "distance": 181.0
+        }
+      }
+    },
+    {
+      "word_id": "word_1",
+      "word_text": "been calculated at 29.930% per",
+      "word_bbox": [
+        35,
+        582,
+        268,
+        599
+      ],
+      "word_center": [
+        151.5,
+        590.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_15",
+          "position": 205.66666666666666,
+          "distance": 384.83333333333337
+        },
+        "left": {
+          "line_id": "vertical_merged_2",
+          "position": 59.5,
+          "distance": 92.0
+        }
+      }
+    },
+    {
+      "word_id": "word_2",
+      "word_text": "covered by this statement, this has",
+      "word_bbox": [
+        10,
+        600,
+        268,
+        618
+      ],
+      "word_center": [
+        139.0,
+        609.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_15",
+          "position": 205.66666666666666,
+          "distance": 403.33333333333337
+        },
+        "left": {
+          "line_id": "vertical_merged_2",
+          "position": 59.5,
+          "distance": 79.5
+        }
+      }
+    },
+    {
+      "word_id": "word_3",
+      "word_text": "your account during the period",
+      "word_bbox": [
+        37,
+        615,
+        269,
+        637
+      ],
+      "word_center": [
+        153.0,
+        626.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_15",
+          "position": 205.66666666666666,
+          "distance": 420.33333333333337
+        },
+        "left": {
+          "line_id": "vertical_merged_2",
+          "position": 59.5,
+          "distance": 93.5
+        }
+      }
+    },
+    {
+      "word_id": "word_4",
+      "word_text": "Where interest has been debited to",
+      "word_bbox": [
+        10,
+        638,
+        268,
+        654
+      ],
+      "word_center": [
+        139.0,
+        646.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_15",
+          "position": 205.66666666666666,
+          "distance": 440.33333333333337
+        },
+        "left": {
+          "line_id": "vertical_merged_2",
+          "position": 59.5,
+          "distance": 79.5
+        }
+      }
+    },
+    {
+      "word_id": "word_5",
+      "word_text": "Services Compensation Scheme.",
+      "word_bbox": [
+        29,
+        665,
+        267,
+        687
+      ],
+      "word_center": [
+        148.0,
+        676.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_15",
+          "position": 205.66666666666666,
+          "distance": 470.33333333333337
+        },
+        "left": {
+          "line_id": "vertical_merged_2",
+          "position": 59.5,
+          "distance": 88.5
+        }
+      }
+    },
+    {
+      "word_id": "word_6",
+      "word_text": "protection by the Financial",
+      "word_bbox": [
+        73,
+        686,
+        266,
+        703
+      ],
+      "word_center": [
+        169.5,
+        694.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_15",
+          "position": 205.66666666666666,
+          "distance": 488.83333333333337
+        },
+        "left": {
+          "line_id": "vertical_merged_2",
+          "position": 59.5,
+          "distance": 110.0
+        }
+      }
+    },
+    {
+      "word_id": "word_7",
+      "word_text": "Your deposit is eligible for",
+      "word_bbox": [
+        75,
+        702,
+        266,
+        725
+      ],
+      "word_center": [
+        170.5,
+        713.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_15",
+          "position": 205.66666666666666,
+          "distance": 507.83333333333337
+        },
+        "left": {
+          "line_id": "vertical_merged_2",
+          "position": 59.5,
+          "distance": 111.0
+        }
+      }
+    },
+    {
+      "word_id": "word_8",
+      "word_text": "NOTICEBOARD",
+      "word_bbox": [
+        106,
+        730,
+        257,
+        753
+      ],
+      "word_center": [
+        181.5,
+        741.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_15",
+          "position": 205.66666666666666,
+          "distance": 535.8333333333334
+        },
+        "left": {
+          "line_id": "vertical_merged_2",
+          "position": 59.5,
+          "distance": 122.0
+        }
+      }
+    }
+  ],
   "inferred_cells": [],
   "border_graph": {
     "nodes": [
@@ -382,7 +617,405 @@
     ]
   },
   "word_graph": {
-    "nodes": [],
-    "edges": []
+    "nodes": [
+      {
+        "id": "word_0",
+        "text": "annum",
+        "bbox": [
+          213,
+          564,
+          268,
+          578
+        ],
+        "center": [
+          240.5,
+          571.0
+        ],
+        "confidence": 0.9998556971549988,
+        "node_type": "word"
+      },
+      {
+        "id": "word_1",
+        "text": "been calculated at 29.930% per",
+        "bbox": [
+          35,
+          582,
+          268,
+          599
+        ],
+        "center": [
+          151.5,
+          590.5
+        ],
+        "confidence": 0.9886563420295715,
+        "node_type": "word"
+      },
+      {
+        "id": "word_2",
+        "text": "covered by this statement, this has",
+        "bbox": [
+          10,
+          600,
+          268,
+          618
+        ],
+        "center": [
+          139.0,
+          609.0
+        ],
+        "confidence": 0.9803985357284546,
+        "node_type": "word"
+      },
+      {
+        "id": "word_3",
+        "text": "your account during the period",
+        "bbox": [
+          37,
+          615,
+          269,
+          637
+        ],
+        "center": [
+          153.0,
+          626.0
+        ],
+        "confidence": 0.989500105381012,
+        "node_type": "word"
+      },
+      {
+        "id": "word_4",
+        "text": "Where interest has been debited to",
+        "bbox": [
+          10,
+          638,
+          268,
+          654
+        ],
+        "center": [
+          139.0,
+          646.0
+        ],
+        "confidence": 0.985528826713562,
+        "node_type": "word"
+      },
+      {
+        "id": "word_5",
+        "text": "Services Compensation Scheme.",
+        "bbox": [
+          29,
+          665,
+          267,
+          687
+        ],
+        "center": [
+          148.0,
+          676.0
+        ],
+        "confidence": 0.9974106550216675,
+        "node_type": "word"
+      },
+      {
+        "id": "word_6",
+        "text": "protection by the Financial",
+        "bbox": [
+          73,
+          686,
+          266,
+          703
+        ],
+        "center": [
+          169.5,
+          694.5
+        ],
+        "confidence": 0.9780873656272888,
+        "node_type": "word"
+      },
+      {
+        "id": "word_7",
+        "text": "Your deposit is eligible for",
+        "bbox": [
+          75,
+          702,
+          266,
+          725
+        ],
+        "center": [
+          170.5,
+          713.5
+        ],
+        "confidence": 0.9867054224014282,
+        "node_type": "word"
+      },
+      {
+        "id": "word_8",
+        "text": "NOTICEBOARD",
+        "bbox": [
+          106,
+          730,
+          257,
+          753
+        ],
+        "center": [
+          181.5,
+          741.5
+        ],
+        "confidence": 0.9999191761016846,
+        "node_type": "word"
+      }
+    ],
+    "edges": [
+      {
+        "source": "word_0",
+        "target": "word_1",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 91.11119579941864
+      },
+      {
+        "source": "word_0",
+        "target": "word_3",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 103.35013304297193
+      },
+      {
+        "source": "word_0",
+        "target": "word_2",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 108.38011810290668
+      },
+      {
+        "source": "word_0",
+        "target": "word_4",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 126.20320915095623
+      },
+      {
+        "source": "word_1",
+        "target": "word_2",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 22.327113561766108
+      },
+      {
+        "source": "word_1",
+        "target": "word_3",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 35.531676008879735
+      },
+      {
+        "source": "word_1",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 56.890245209526036
+      },
+      {
+        "source": "word_1",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 85.57160744078611
+      },
+      {
+        "source": "word_2",
+        "target": "word_3",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 22.02271554554524
+      },
+      {
+        "source": "word_2",
+        "target": "word_1",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 22.327113561766108
+      },
+      {
+        "source": "word_2",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 37.0
+      },
+      {
+        "source": "word_2",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 67.60177512462228
+      },
+      {
+        "source": "word_3",
+        "target": "word_2",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 22.02271554554524
+      },
+      {
+        "source": "word_3",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 24.413111231467404
+      },
+      {
+        "source": "word_3",
+        "target": "word_1",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 35.531676008879735
+      },
+      {
+        "source": "word_3",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 50.24937810560445
+      },
+      {
+        "source": "word_4",
+        "target": "word_3",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 24.413111231467404
+      },
+      {
+        "source": "word_4",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 31.32091952673165
+      },
+      {
+        "source": "word_4",
+        "target": "word_2",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 37.0
+      },
+      {
+        "source": "word_4",
+        "target": "word_1",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 56.890245209526036
+      },
+      {
+        "source": "word_5",
+        "target": "word_6",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 28.36370920736567
+      },
+      {
+        "source": "word_5",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 31.32091952673165
+      },
+      {
+        "source": "word_5",
+        "target": "word_7",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 43.73213921133976
+      },
+      {
+        "source": "word_5",
+        "target": "word_3",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 50.24937810560445
+      },
+      {
+        "source": "word_6",
+        "target": "word_7",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 19.026297590440446
+      },
+      {
+        "source": "word_6",
+        "target": "word_5",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 28.36370920736567
+      },
+      {
+        "source": "word_6",
+        "target": "word_8",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 48.507731342539614
+      },
+      {
+        "source": "word_6",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 57.29310604252487
+      },
+      {
+        "source": "word_7",
+        "target": "word_6",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 19.026297590440446
+      },
+      {
+        "source": "word_7",
+        "target": "word_8",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 30.083217912982647
+      },
+      {
+        "source": "word_7",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 43.73213921133976
+      },
+      {
+        "source": "word_7",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 74.48825410761081
+      },
+      {
+        "source": "word_8",
+        "target": "word_7",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 30.083217912982647
+      },
+      {
+        "source": "word_8",
+        "target": "word_6",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 48.507731342539614
+      },
+      {
+        "source": "word_8",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 73.56969484781081
+      },
+      {
+        "source": "word_8",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 104.5299000286521
+      }
+    ]
   }
 }

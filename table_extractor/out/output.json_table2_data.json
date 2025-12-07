@@ -14,7 +14,7 @@
   "stats": {
     "num_h_lines": 47,
     "num_v_lines": 0,
-    "num_words": 0,
+    "num_words": 38,
     "num_cells": 0
   },
   "borders": {
@@ -398,7 +398,996 @@
     ],
     "vertical": []
   },
-  "word_to_border_mappings": [],
+  "word_to_border_mappings": [
+    {
+      "word_id": "word_0",
+      "word_text": "DD",
+      "word_bbox": [
+        17,
+        9,
+        35,
+        21
+      ],
+      "word_center": [
+        26.0,
+        15.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_1",
+          "position": 13.333333333333334,
+          "distance": 1.666666666666666
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_2",
+          "position": 21.5,
+          "distance": 6.5
+        }
+      }
+    },
+    {
+      "word_id": "word_1",
+      "word_text": "Direct Debit to L&G Insurance MI",
+      "word_bbox": [
+        43,
+        7,
+        308,
+        34
+      ],
+      "word_center": [
+        175.5,
+        20.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_1",
+          "position": 13.333333333333334,
+          "distance": 7.166666666666666
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_2",
+          "position": 21.5,
+          "distance": 1.0
+        }
+      }
+    },
+    {
+      "word_id": "word_2",
+      "word_text": "19.42",
+      "word_bbox": [
+        392,
+        12,
+        444,
+        35
+      ],
+      "word_center": [
+        418.0,
+        23.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_2",
+          "position": 21.5,
+          "distance": 2.0
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_3",
+          "position": 36.57142857142857,
+          "distance": 13.07142857142857
+        }
+      }
+    },
+    {
+      "word_id": "word_3",
+      "word_text": "Ref: 0236935250-230313",
+      "word_bbox": [
+        43,
+        26,
+        207,
+        48
+      ],
+      "word_center": [
+        125.0,
+        37.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_3",
+          "position": 36.57142857142857,
+          "distance": 0.4285714285714306
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_4",
+          "position": 45.85,
+          "distance": 8.850000000000001
+        }
+      }
+    },
+    {
+      "word_id": "word_4",
+      "word_text": "DD",
+      "word_bbox": [
+        8,
+        60,
+        34,
+        76
+      ],
+      "word_center": [
+        21.0,
+        68.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_5",
+          "position": 56.9,
+          "distance": 11.100000000000001
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_6",
+          "position": 72.0,
+          "distance": 4.0
+        }
+      }
+    },
+    {
+      "word_id": "word_5",
+      "word_text": "Direct Debit to L&G Insurance MI",
+      "word_bbox": [
+        40,
+        59,
+        306,
+        85
+      ],
+      "word_center": [
+        173.0,
+        72.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_5",
+          "position": 56.9,
+          "distance": 15.100000000000001
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_7",
+          "position": 86.40625,
+          "distance": 14.40625
+        }
+      }
+    },
+    {
+      "word_id": "word_6",
+      "word_text": "44.85",
+      "word_bbox": [
+        389,
+        63,
+        441,
+        86
+      ],
+      "word_center": [
+        415.0,
+        74.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_6",
+          "position": 72.0,
+          "distance": 2.5
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_7",
+          "position": 86.40625,
+          "distance": 11.90625
+        }
+      }
+    },
+    {
+      "word_id": "word_7",
+      "word_text": "Ref: 0236935268-230313",
+      "word_bbox": [
+        39,
+        80,
+        205,
+        103
+      ],
+      "word_center": [
+        122.0,
+        91.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_7",
+          "position": 86.40625,
+          "distance": 5.09375
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_8",
+          "position": 94.25,
+          "distance": 2.75
+        }
+      }
+    },
+    {
+      "word_id": "word_8",
+      "word_text": "Card Payment to Deliveroo On 11",
+      "word_bbox": [
+        37,
+        115,
+        306,
+        139
+      ],
+      "word_center": [
+        171.5,
+        127.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_11",
+          "position": 123.5,
+          "distance": 3.5
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_12",
+          "position": 137.72727272727272,
+          "distance": 10.72727272727272
+        }
+      }
+    },
+    {
+      "word_id": "word_9",
+      "word_text": "19.08",
+      "word_bbox": [
+        389,
+        117,
+        440,
+        139
+      ],
+      "word_center": [
+        414.5,
+        128.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_11",
+          "position": 123.5,
+          "distance": 4.5
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_12",
+          "position": 137.72727272727272,
+          "distance": 9.72727272727272
+        }
+      }
+    },
+    {
+      "word_id": "word_10",
+      "word_text": "Mar",
+      "word_bbox": [
+        34,
+        134,
+        79,
+        160
+      ],
+      "word_center": [
+        56.5,
+        147.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_13",
+          "position": 144.8,
+          "distance": 2.1999999999999886
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_14",
+          "position": 177.0,
+          "distance": 30.0
+        }
+      }
+    },
+    {
+      "word_id": "word_11",
+      "word_text": "\")",
+      "word_bbox": [
+        0,
+        171,
+        20,
+        194
+      ],
+      "word_center": [
+        10.0,
+        182.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_14",
+          "position": 177.0,
+          "distance": 5.5
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_15",
+          "position": 192.97058823529412,
+          "distance": 10.470588235294116
+        }
+      }
+    },
+    {
+      "word_id": "word_12",
+      "word_text": "Card Payment to Easyjet in F On 09",
+      "word_bbox": [
+        35,
+        172,
+        321,
+        199
+      ],
+      "word_center": [
+        178.0,
+        185.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_14",
+          "position": 177.0,
+          "distance": 8.5
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_15",
+          "position": 192.97058823529412,
+          "distance": 7.470588235294116
+        }
+      }
+    },
+    {
+      "word_id": "word_13",
+      "word_text": "10.00",
+      "word_bbox": [
+        389,
+        176,
+        440,
+        198
+      ],
+      "word_center": [
+        414.5,
+        187.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_14",
+          "position": 177.0,
+          "distance": 10.0
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_15",
+          "position": 192.97058823529412,
+          "distance": 5.970588235294116
+        }
+      }
+    },
+    {
+      "word_id": "word_14",
+      "word_text": "Mar",
+      "word_bbox": [
+        33,
+        194,
+        78,
+        220
+      ],
+      "word_center": [
+        55.5,
+        207.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_16",
+          "position": 199.71428571428572,
+          "distance": 7.285714285714278
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_17",
+          "position": 232.0,
+          "distance": 25.0
+        }
+      }
+    },
+    {
+      "word_id": "word_15",
+      "word_text": "Card Payment to Easyjet in F On 09",
+      "word_bbox": [
+        35,
+        234,
+        318,
+        257
+      ],
+      "word_center": [
+        176.5,
+        245.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_17",
+          "position": 232.0,
+          "distance": 13.5
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_18",
+          "position": 247.79545454545453,
+          "distance": 2.2954545454545325
+        }
+      }
+    },
+    {
+      "word_id": "word_16",
+      "word_text": "16.00",
+      "word_bbox": [
+        388,
+        236,
+        440,
+        258
+      ],
+      "word_center": [
+        414.0,
+        247.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_17",
+          "position": 232.0,
+          "distance": 15.0
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_18",
+          "position": 247.79545454545453,
+          "distance": 0.7954545454545325
+        }
+      }
+    },
+    {
+      "word_id": "word_17",
+      "word_text": "Mar",
+      "word_bbox": [
+        34,
+        256,
+        77,
+        279
+      ],
+      "word_center": [
+        55.5,
+        267.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_19",
+          "position": 254.71428571428572,
+          "distance": 12.785714285714278
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_20",
+          "position": 288.0,
+          "distance": 20.5
+        }
+      }
+    },
+    {
+      "word_id": "word_18",
+      "word_text": "Bill Payment to Gva Bhcc",
+      "word_bbox": [
+        34,
+        294,
+        237,
+        317
+      ],
+      "word_center": [
+        135.5,
+        305.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_21",
+          "position": 303.57142857142856,
+          "distance": 1.9285714285714448
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_22",
+          "position": 312.0,
+          "distance": 6.5
+        }
+      }
+    },
+    {
+      "word_id": "word_19",
+      "word_text": "3,437.50",
+      "word_bbox": [
+        365,
+        296,
+        440,
+        318
+      ],
+      "word_center": [
+        402.5,
+        307.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_21",
+          "position": 303.57142857142856,
+          "distance": 3.428571428571445
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_22",
+          "position": 312.0,
+          "distance": 5.0
+        }
+      }
+    },
+    {
+      "word_id": "word_20",
+      "word_text": "Ref: 0045078",
+      "word_bbox": [
+        34,
+        316,
+        123,
+        333
+      ],
+      "word_center": [
+        78.5,
+        324.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_22",
+          "position": 312.0,
+          "distance": 12.5
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_23",
+          "position": 325.14285714285717,
+          "distance": 0.6428571428571672
+        }
+      }
+    },
+    {
+      "word_id": "word_21",
+      "word_text": "Giro",
+      "word_bbox": [
+        0,
+        351,
+        34,
+        371
+      ],
+      "word_center": [
+        17.0,
+        361.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_25",
+          "position": 353.5192307692308,
+          "distance": 7.480769230769226
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_26",
+          "position": 361.11538461538464,
+          "distance": 0.11538461538464162
+        }
+      }
+    },
+    {
+      "word_id": "word_22",
+      "word_text": "Received From Brighton Valeting",
+      "word_bbox": [
+        32,
+        349,
+        299,
+        373
+      ],
+      "word_center": [
+        165.5,
+        361.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_25",
+          "position": 353.5192307692308,
+          "distance": 7.480769230769226
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_26",
+          "position": 361.11538461538464,
+          "distance": 0.11538461538464162
+        }
+      }
+    },
+    {
+      "word_id": "word_23",
+      "word_text": "3,437.50",
+      "word_bbox": [
+        475,
+        351,
+        551,
+        373
+      ],
+      "word_center": [
+        513.0,
+        362.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_26",
+          "position": 361.11538461538464,
+          "distance": 0.8846153846153584
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_27",
+          "position": 373.5,
+          "distance": 11.5
+        }
+      }
+    },
+    {
+      "word_id": "word_24",
+      "word_text": "91,298.94",
+      "word_bbox": [
+        575,
+        351,
+        666,
+        373
+      ],
+      "word_center": [
+        620.5,
+        362.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_26",
+          "position": 361.11538461538464,
+          "distance": 0.8846153846153584
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_27",
+          "position": 373.5,
+          "distance": 11.5
+        }
+      }
+    },
+    {
+      "word_id": "word_25",
+      "word_text": "Ref: Rent",
+      "word_bbox": [
+        34,
+        368,
+        96,
+        389
+      ],
+      "word_center": [
+        65.0,
+        378.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_27",
+          "position": 373.5,
+          "distance": 5.0
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_28",
+          "position": 389.0,
+          "distance": 10.5
+        }
+      }
+    },
+    {
+      "word_id": "word_26",
+      "word_text": "DD",
+      "word_bbox": [
+        2,
+        405,
+        27,
+        420
+      ],
+      "word_center": [
+        14.5,
+        412.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_30",
+          "position": 411.2,
+          "distance": 1.3000000000000114
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_31",
+          "position": 423.3125,
+          "distance": 10.8125
+        }
+      }
+    },
+    {
+      "word_id": "word_27",
+      "word_text": "Direct Debit to TV Licence MBP",
+      "word_bbox": [
+        31,
+        403,
+        287,
+        427
+      ],
+      "word_center": [
+        159.0,
+        415.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_30",
+          "position": 411.2,
+          "distance": 3.8000000000000114
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_31",
+          "position": 423.3125,
+          "distance": 8.3125
+        }
+      }
+    },
+    {
+      "word_id": "word_28",
+      "word_text": "13.25",
+      "word_bbox": [
+        389,
+        405,
+        440,
+        429
+      ],
+      "word_center": [
+        414.5,
+        417.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_30",
+          "position": 411.2,
+          "distance": 5.800000000000011
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_31",
+          "position": 423.3125,
+          "distance": 6.3125
+        }
+      }
+    },
+    {
+      "word_id": "word_29",
+      "word_text": "91,285.69",
+      "word_bbox": [
+        577,
+        405,
+        669,
+        430
+      ],
+      "word_center": [
+        623.0,
+        417.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_30",
+          "position": 411.2,
+          "distance": 6.300000000000011
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_31",
+          "position": 423.3125,
+          "distance": 5.8125
+        }
+      }
+    },
+    {
+      "word_id": "word_30",
+      "word_text": "Ref: 3616955736",
+      "word_bbox": [
+        33,
+        424,
+        145,
+        444
+      ],
+      "word_center": [
+        89.0,
+        434.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_31",
+          "position": 423.3125,
+          "distance": 10.6875
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_32",
+          "position": 435.875,
+          "distance": 1.875
+        }
+      }
+    },
+    {
+      "word_id": "word_31",
+      "word_text": "Card Payment to Tesco Stores 2700",
+      "word_bbox": [
+        31,
+        457,
+        324,
+        485
+      ],
+      "word_center": [
+        177.5,
+        471.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_35",
+          "position": 461.9642857142857,
+          "distance": 9.035714285714278
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_36",
+          "position": 476.2857142857143,
+          "distance": 5.285714285714278
+        }
+      }
+    },
+    {
+      "word_id": "word_32",
+      "word_text": "5.93",
+      "word_bbox": [
+        398,
+        461,
+        442,
+        484
+      ],
+      "word_center": [
+        420.0,
+        472.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_35",
+          "position": 461.9642857142857,
+          "distance": 10.535714285714278
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_36",
+          "position": 476.2857142857143,
+          "distance": 3.7857142857142776
+        }
+      }
+    },
+    {
+      "word_id": "word_33",
+      "word_text": "91,279.76",
+      "word_bbox": [
+        578,
+        462,
+        670,
+        486
+      ],
+      "word_center": [
+        624.0,
+        474.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_35",
+          "position": 461.9642857142857,
+          "distance": 12.035714285714278
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_36",
+          "position": 476.2857142857143,
+          "distance": 2.2857142857142776
+        }
+      }
+    },
+    {
+      "word_id": "word_34",
+      "word_text": "On 15 Mar",
+      "word_bbox": [
+        31,
+        479,
+        125,
+        504
+      ],
+      "word_center": [
+        78.0,
+        491.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_37",
+          "position": 487.25,
+          "distance": 4.25
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_38",
+          "position": 494.5,
+          "distance": 3.0
+        }
+      }
+    },
+    {
+      "word_id": "word_35",
+      "word_text": "Card Payment to Bhafc - Public Sta",
+      "word_bbox": [
+        32,
+        518,
+        316,
+        545
+      ],
+      "word_center": [
+        174.0,
+        531.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_40",
+          "position": 516.9444444444445,
+          "distance": 14.555555555555543
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_41",
+          "position": 531.6666666666666,
+          "distance": 0.16666666666662877
+        }
+      }
+    },
+    {
+      "word_id": "word_36",
+      "word_text": "14.85",
+      "word_bbox": [
+        389,
+        523,
+        442,
+        545
+      ],
+      "word_center": [
+        415.5,
+        534.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_41",
+          "position": 531.6666666666666,
+          "distance": 2.3333333333333712
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_42",
+          "position": 542.25,
+          "distance": 8.25
+        }
+      }
+    },
+    {
+      "word_id": "word_37",
+      "word_text": "On 15 Mar",
+      "word_bbox": [
+        33,
+        538,
+        126,
+        563
+      ],
+      "word_center": [
+        79.5,
+        550.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_43",
+          "position": 549.5,
+          "distance": 1.0
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_44",
+          "position": 564.25,
+          "distance": 13.75
+        }
+      }
+    }
+  ],
   "inferred_cells": [],
   "border_graph": {
     "nodes": [
@@ -829,7 +1818,1681 @@
     "edges": []
   },
   "word_graph": {
-    "nodes": [],
-    "edges": []
+    "nodes": [
+      {
+        "id": "word_0",
+        "text": "DD",
+        "bbox": [
+          17,
+          9,
+          35,
+          21
+        ],
+        "center": [
+          26.0,
+          15.0
+        ],
+        "confidence": 0.9169631600379944,
+        "node_type": "word"
+      },
+      {
+        "id": "word_1",
+        "text": "Direct Debit to L&G Insurance MI",
+        "bbox": [
+          43,
+          7,
+          308,
+          34
+        ],
+        "center": [
+          175.5,
+          20.5
+        ],
+        "confidence": 0.9896664619445801,
+        "node_type": "word"
+      },
+      {
+        "id": "word_2",
+        "text": "19.42",
+        "bbox": [
+          392,
+          12,
+          444,
+          35
+        ],
+        "center": [
+          418.0,
+          23.5
+        ],
+        "confidence": 0.9999610781669617,
+        "node_type": "word"
+      },
+      {
+        "id": "word_3",
+        "text": "Ref: 0236935250-230313",
+        "bbox": [
+          43,
+          26,
+          207,
+          48
+        ],
+        "center": [
+          125.0,
+          37.0
+        ],
+        "confidence": 0.9942657351493835,
+        "node_type": "word"
+      },
+      {
+        "id": "word_4",
+        "text": "DD",
+        "bbox": [
+          8,
+          60,
+          34,
+          76
+        ],
+        "center": [
+          21.0,
+          68.0
+        ],
+        "confidence": 0.999832272529602,
+        "node_type": "word"
+      },
+      {
+        "id": "word_5",
+        "text": "Direct Debit to L&G Insurance MI",
+        "bbox": [
+          40,
+          59,
+          306,
+          85
+        ],
+        "center": [
+          173.0,
+          72.0
+        ],
+        "confidence": 0.9819972515106201,
+        "node_type": "word"
+      },
+      {
+        "id": "word_6",
+        "text": "44.85",
+        "bbox": [
+          389,
+          63,
+          441,
+          86
+        ],
+        "center": [
+          415.0,
+          74.5
+        ],
+        "confidence": 0.999973475933075,
+        "node_type": "word"
+      },
+      {
+        "id": "word_7",
+        "text": "Ref: 0236935268-230313",
+        "bbox": [
+          39,
+          80,
+          205,
+          103
+        ],
+        "center": [
+          122.0,
+          91.5
+        ],
+        "confidence": 0.9971553683280945,
+        "node_type": "word"
+      },
+      {
+        "id": "word_8",
+        "text": "Card Payment to Deliveroo On 11",
+        "bbox": [
+          37,
+          115,
+          306,
+          139
+        ],
+        "center": [
+          171.5,
+          127.0
+        ],
+        "confidence": 0.9857537150382996,
+        "node_type": "word"
+      },
+      {
+        "id": "word_9",
+        "text": "19.08",
+        "bbox": [
+          389,
+          117,
+          440,
+          139
+        ],
+        "center": [
+          414.5,
+          128.0
+        ],
+        "confidence": 0.9999673962593079,
+        "node_type": "word"
+      },
+      {
+        "id": "word_10",
+        "text": "Mar",
+        "bbox": [
+          34,
+          134,
+          79,
+          160
+        ],
+        "center": [
+          56.5,
+          147.0
+        ],
+        "confidence": 0.9998335838317871,
+        "node_type": "word"
+      },
+      {
+        "id": "word_11",
+        "text": "\")",
+        "bbox": [
+          0,
+          171,
+          20,
+          194
+        ],
+        "center": [
+          10.0,
+          182.5
+        ],
+        "confidence": 0.48340094089508057,
+        "node_type": "word"
+      },
+      {
+        "id": "word_12",
+        "text": "Card Payment to Easyjet in F On 09",
+        "bbox": [
+          35,
+          172,
+          321,
+          199
+        ],
+        "center": [
+          178.0,
+          185.5
+        ],
+        "confidence": 0.9884433746337891,
+        "node_type": "word"
+      },
+      {
+        "id": "word_13",
+        "text": "10.00",
+        "bbox": [
+          389,
+          176,
+          440,
+          198
+        ],
+        "center": [
+          414.5,
+          187.0
+        ],
+        "confidence": 0.999952495098114,
+        "node_type": "word"
+      },
+      {
+        "id": "word_14",
+        "text": "Mar",
+        "bbox": [
+          33,
+          194,
+          78,
+          220
+        ],
+        "center": [
+          55.5,
+          207.0
+        ],
+        "confidence": 0.9999601244926453,
+        "node_type": "word"
+      },
+      {
+        "id": "word_15",
+        "text": "Card Payment to Easyjet in F On 09",
+        "bbox": [
+          35,
+          234,
+          318,
+          257
+        ],
+        "center": [
+          176.5,
+          245.5
+        ],
+        "confidence": 0.980471670627594,
+        "node_type": "word"
+      },
+      {
+        "id": "word_16",
+        "text": "16.00",
+        "bbox": [
+          388,
+          236,
+          440,
+          258
+        ],
+        "center": [
+          414.0,
+          247.0
+        ],
+        "confidence": 0.9999483227729797,
+        "node_type": "word"
+      },
+      {
+        "id": "word_17",
+        "text": "Mar",
+        "bbox": [
+          34,
+          256,
+          77,
+          279
+        ],
+        "center": [
+          55.5,
+          267.5
+        ],
+        "confidence": 0.9998989105224609,
+        "node_type": "word"
+      },
+      {
+        "id": "word_18",
+        "text": "Bill Payment to Gva Bhcc",
+        "bbox": [
+          34,
+          294,
+          237,
+          317
+        ],
+        "center": [
+          135.5,
+          305.5
+        ],
+        "confidence": 0.980710506439209,
+        "node_type": "word"
+      },
+      {
+        "id": "word_19",
+        "text": "3,437.50",
+        "bbox": [
+          365,
+          296,
+          440,
+          318
+        ],
+        "center": [
+          402.5,
+          307.0
+        ],
+        "confidence": 0.9998974800109863,
+        "node_type": "word"
+      },
+      {
+        "id": "word_20",
+        "text": "Ref: 0045078",
+        "bbox": [
+          34,
+          316,
+          123,
+          333
+        ],
+        "center": [
+          78.5,
+          324.5
+        ],
+        "confidence": 0.9765335917472839,
+        "node_type": "word"
+      },
+      {
+        "id": "word_21",
+        "text": "Giro",
+        "bbox": [
+          0,
+          351,
+          34,
+          371
+        ],
+        "center": [
+          17.0,
+          361.0
+        ],
+        "confidence": 0.9996424913406372,
+        "node_type": "word"
+      },
+      {
+        "id": "word_22",
+        "text": "Received From Brighton Valeting",
+        "bbox": [
+          32,
+          349,
+          299,
+          373
+        ],
+        "center": [
+          165.5,
+          361.0
+        ],
+        "confidence": 0.9932072758674622,
+        "node_type": "word"
+      },
+      {
+        "id": "word_23",
+        "text": "3,437.50",
+        "bbox": [
+          475,
+          351,
+          551,
+          373
+        ],
+        "center": [
+          513.0,
+          362.0
+        ],
+        "confidence": 0.9999325275421143,
+        "node_type": "word"
+      },
+      {
+        "id": "word_24",
+        "text": "91,298.94",
+        "bbox": [
+          575,
+          351,
+          666,
+          373
+        ],
+        "center": [
+          620.5,
+          362.0
+        ],
+        "confidence": 0.9999220967292786,
+        "node_type": "word"
+      },
+      {
+        "id": "word_25",
+        "text": "Ref: Rent",
+        "bbox": [
+          34,
+          368,
+          96,
+          389
+        ],
+        "center": [
+          65.0,
+          378.5
+        ],
+        "confidence": 0.9980299472808838,
+        "node_type": "word"
+      },
+      {
+        "id": "word_26",
+        "text": "DD",
+        "bbox": [
+          2,
+          405,
+          27,
+          420
+        ],
+        "center": [
+          14.5,
+          412.5
+        ],
+        "confidence": 0.9998646974563599,
+        "node_type": "word"
+      },
+      {
+        "id": "word_27",
+        "text": "Direct Debit to TV Licence MBP",
+        "bbox": [
+          31,
+          403,
+          287,
+          427
+        ],
+        "center": [
+          159.0,
+          415.0
+        ],
+        "confidence": 0.9971312284469604,
+        "node_type": "word"
+      },
+      {
+        "id": "word_28",
+        "text": "13.25",
+        "bbox": [
+          389,
+          405,
+          440,
+          429
+        ],
+        "center": [
+          414.5,
+          417.0
+        ],
+        "confidence": 0.9999592900276184,
+        "node_type": "word"
+      },
+      {
+        "id": "word_29",
+        "text": "91,285.69",
+        "bbox": [
+          577,
+          405,
+          669,
+          430
+        ],
+        "center": [
+          623.0,
+          417.5
+        ],
+        "confidence": 0.9999280571937561,
+        "node_type": "word"
+      },
+      {
+        "id": "word_30",
+        "text": "Ref: 3616955736",
+        "bbox": [
+          33,
+          424,
+          145,
+          444
+        ],
+        "center": [
+          89.0,
+          434.0
+        ],
+        "confidence": 0.9918448328971863,
+        "node_type": "word"
+      },
+      {
+        "id": "word_31",
+        "text": "Card Payment to Tesco Stores 2700",
+        "bbox": [
+          31,
+          457,
+          324,
+          485
+        ],
+        "center": [
+          177.5,
+          471.0
+        ],
+        "confidence": 0.9920060038566589,
+        "node_type": "word"
+      },
+      {
+        "id": "word_32",
+        "text": "5.93",
+        "bbox": [
+          398,
+          461,
+          442,
+          484
+        ],
+        "center": [
+          420.0,
+          472.5
+        ],
+        "confidence": 0.9999004602432251,
+        "node_type": "word"
+      },
+      {
+        "id": "word_33",
+        "text": "91,279.76",
+        "bbox": [
+          578,
+          462,
+          670,
+          486
+        ],
+        "center": [
+          624.0,
+          474.0
+        ],
+        "confidence": 0.9999373555183411,
+        "node_type": "word"
+      },
+      {
+        "id": "word_34",
+        "text": "On 15 Mar",
+        "bbox": [
+          31,
+          479,
+          125,
+          504
+        ],
+        "center": [
+          78.0,
+          491.5
+        ],
+        "confidence": 0.9984775185585022,
+        "node_type": "word"
+      },
+      {
+        "id": "word_35",
+        "text": "Card Payment to Bhafc - Public Sta",
+        "bbox": [
+          32,
+          518,
+          316,
+          545
+        ],
+        "center": [
+          174.0,
+          531.5
+        ],
+        "confidence": 0.999593198299408,
+        "node_type": "word"
+      },
+      {
+        "id": "word_36",
+        "text": "14.85",
+        "bbox": [
+          389,
+          523,
+          442,
+          545
+        ],
+        "center": [
+          415.5,
+          534.0
+        ],
+        "confidence": 0.9999820590019226,
+        "node_type": "word"
+      },
+      {
+        "id": "word_37",
+        "text": "On 15 Mar",
+        "bbox": [
+          33,
+          538,
+          126,
+          563
+        ],
+        "center": [
+          79.5,
+          550.5
+        ],
+        "confidence": 0.9718186259269714,
+        "node_type": "word"
+      }
+    ],
+    "edges": [
+      {
+        "source": "word_0",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 53.23532661682466
+      },
+      {
+        "source": "word_0",
+        "target": "word_3",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 101.41498903022176
+      },
+      {
+        "source": "word_0",
+        "target": "word_7",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 122.75280037538859
+      },
+      {
+        "source": "word_0",
+        "target": "word_10",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 135.47785796948517
+      },
+      {
+        "source": "word_1",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 51.56064390598706
+      },
+      {
+        "source": "word_1",
+        "target": "word_3",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 53.12720583655798
+      },
+      {
+        "source": "word_1",
+        "target": "word_7",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 88.90022497159386
+      },
+      {
+        "source": "word_1",
+        "target": "word_8",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 106.57509089838958
+      },
+      {
+        "source": "word_2",
+        "target": "word_6",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 51.088159097779204
+      },
+      {
+        "source": "word_2",
+        "target": "word_9",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 104.55859601199703
+      },
+      {
+        "source": "word_2",
+        "target": "word_13",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 163.53745748298766
+      },
+      {
+        "source": "word_2",
+        "target": "word_16",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 223.53579131763217
+      },
+      {
+        "source": "word_3",
+        "target": "word_1",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 53.12720583655798
+      },
+      {
+        "source": "word_3",
+        "target": "word_7",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 54.582506355058484
+      },
+      {
+        "source": "word_3",
+        "target": "word_5",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 59.405386961116584
+      },
+      {
+        "source": "word_3",
+        "target": "word_8",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 101.30276402941827
+      },
+      {
+        "source": "word_4",
+        "target": "word_0",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 53.23532661682466
+      },
+      {
+        "source": "word_4",
+        "target": "word_10",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 86.60975695613052
+      },
+      {
+        "source": "word_4",
+        "target": "word_7",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 103.69787847395915
+      },
+      {
+        "source": "word_4",
+        "target": "word_3",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 108.52188719332152
+      },
+      {
+        "source": "word_5",
+        "target": "word_1",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 51.56064390598706
+      },
+      {
+        "source": "word_5",
+        "target": "word_7",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 54.60082416960389
+      },
+      {
+        "source": "word_5",
+        "target": "word_8",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 55.02045074333724
+      },
+      {
+        "source": "word_5",
+        "target": "word_3",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 59.405386961116584
+      },
+      {
+        "source": "word_6",
+        "target": "word_2",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 51.088159097779204
+      },
+      {
+        "source": "word_6",
+        "target": "word_9",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 53.50233639758174
+      },
+      {
+        "source": "word_6",
+        "target": "word_13",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 112.50111110562419
+      },
+      {
+        "source": "word_6",
+        "target": "word_16",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 172.5028985263726
+      },
+      {
+        "source": "word_7",
+        "target": "word_3",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 54.582506355058484
+      },
+      {
+        "source": "word_7",
+        "target": "word_5",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 54.60082416960389
+      },
+      {
+        "source": "word_7",
+        "target": "word_8",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 60.91387362497972
+      },
+      {
+        "source": "word_7",
+        "target": "word_10",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 85.85161617581815
+      },
+      {
+        "source": "word_8",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 55.02045074333724
+      },
+      {
+        "source": "word_8",
+        "target": "word_12",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 58.86000339789321
+      },
+      {
+        "source": "word_8",
+        "target": "word_7",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 60.91387362497972
+      },
+      {
+        "source": "word_8",
+        "target": "word_3",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 101.30276402941827
+      },
+      {
+        "source": "word_9",
+        "target": "word_6",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 53.50233639758174
+      },
+      {
+        "source": "word_9",
+        "target": "word_13",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 59.0
+      },
+      {
+        "source": "word_9",
+        "target": "word_2",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 104.55859601199703
+      },
+      {
+        "source": "word_9",
+        "target": "word_16",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 119.00105041553205
+      },
+      {
+        "source": "word_10",
+        "target": "word_11",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 58.502136713115014
+      },
+      {
+        "source": "word_10",
+        "target": "word_14",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 60.00833275470999
+      },
+      {
+        "source": "word_10",
+        "target": "word_7",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 85.85161617581815
+      },
+      {
+        "source": "word_10",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 86.60975695613052
+      },
+      {
+        "source": "word_11",
+        "target": "word_14",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 51.6768807108169
+      },
+      {
+        "source": "word_11",
+        "target": "word_10",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 58.502136713115014
+      },
+      {
+        "source": "word_11",
+        "target": "word_17",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 96.4118768617228
+      },
+      {
+        "source": "word_11",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 115.02717070327341
+      },
+      {
+        "source": "word_12",
+        "target": "word_8",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 58.86000339789321
+      },
+      {
+        "source": "word_12",
+        "target": "word_15",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 60.01874707122767
+      },
+      {
+        "source": "word_12",
+        "target": "word_7",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 109.41663493271945
+      },
+      {
+        "source": "word_12",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 113.61007877824925
+      },
+      {
+        "source": "word_13",
+        "target": "word_9",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 59.0
+      },
+      {
+        "source": "word_13",
+        "target": "word_16",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 60.002083297165605
+      },
+      {
+        "source": "word_13",
+        "target": "word_6",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 112.50111110562419
+      },
+      {
+        "source": "word_13",
+        "target": "word_19",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 120.59850745345068
+      },
+      {
+        "source": "word_14",
+        "target": "word_11",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 51.6768807108169
+      },
+      {
+        "source": "word_14",
+        "target": "word_10",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 60.00833275470999
+      },
+      {
+        "source": "word_14",
+        "target": "word_17",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 60.5
+      },
+      {
+        "source": "word_14",
+        "target": "word_20",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 119.7299043681235
+      },
+      {
+        "source": "word_15",
+        "target": "word_12",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 60.01874707122767
+      },
+      {
+        "source": "word_15",
+        "target": "word_18",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 72.67048919609665
+      },
+      {
+        "source": "word_15",
+        "target": "word_22",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 116.02262710350942
+      },
+      {
+        "source": "word_15",
+        "target": "word_8",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 118.60543832388126
+      },
+      {
+        "source": "word_16",
+        "target": "word_13",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 60.002083297165605
+      },
+      {
+        "source": "word_16",
+        "target": "word_19",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 61.09214352107806
+      },
+      {
+        "source": "word_16",
+        "target": "word_9",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 119.00105041553205
+      },
+      {
+        "source": "word_16",
+        "target": "word_23",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 151.74320413119
+      },
+      {
+        "source": "word_17",
+        "target": "word_14",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 60.5
+      },
+      {
+        "source": "word_17",
+        "target": "word_20",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 61.465437442517235
+      },
+      {
+        "source": "word_17",
+        "target": "word_18",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 88.56635930193812
+      },
+      {
+        "source": "word_17",
+        "target": "word_11",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 96.4118768617228
+      },
+      {
+        "source": "word_18",
+        "target": "word_20",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 60.08327554319921
+      },
+      {
+        "source": "word_18",
+        "target": "word_22",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 63.08922253443927
+      },
+      {
+        "source": "word_18",
+        "target": "word_15",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 72.67048919609665
+      },
+      {
+        "source": "word_18",
+        "target": "word_17",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 88.56635930193812
+      },
+      {
+        "source": "word_19",
+        "target": "word_16",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 61.09214352107806
+      },
+      {
+        "source": "word_19",
+        "target": "word_28",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 110.65260954898443
+      },
+      {
+        "source": "word_19",
+        "target": "word_13",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 120.59850745345068
+      },
+      {
+        "source": "word_19",
+        "target": "word_23",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 123.43115490021148
+      },
+      {
+        "source": "word_20",
+        "target": "word_25",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 55.66192594583842
+      },
+      {
+        "source": "word_20",
+        "target": "word_18",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 60.08327554319921
+      },
+      {
+        "source": "word_20",
+        "target": "word_17",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 61.465437442517235
+      },
+      {
+        "source": "word_20",
+        "target": "word_21",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 71.51573253487655
+      },
+      {
+        "source": "word_21",
+        "target": "word_25",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 51.090605790105876
+      },
+      {
+        "source": "word_21",
+        "target": "word_26",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 51.56064390598706
+      },
+      {
+        "source": "word_21",
+        "target": "word_20",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 71.51573253487655
+      },
+      {
+        "source": "word_21",
+        "target": "word_17",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 101.1162697096763
+      },
+      {
+        "source": "word_22",
+        "target": "word_27",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 54.389796837274545
+      },
+      {
+        "source": "word_22",
+        "target": "word_18",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 63.08922253443927
+      },
+      {
+        "source": "word_22",
+        "target": "word_20",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 94.3464360747135
+      },
+      {
+        "source": "word_22",
+        "target": "word_25",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 102.0122541658599
+      },
+      {
+        "source": "word_23",
+        "target": "word_24",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 107.5
+      },
+      {
+        "source": "word_23",
+        "target": "word_28",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 112.81511423563776
+      },
+      {
+        "source": "word_23",
+        "target": "word_29",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 123.2081571974843
+      },
+      {
+        "source": "word_23",
+        "target": "word_19",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 123.43115490021148
+      },
+      {
+        "source": "word_24",
+        "target": "word_29",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 55.556277773083394
+      },
+      {
+        "source": "word_24",
+        "target": "word_23",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 107.5
+      },
+      {
+        "source": "word_24",
+        "target": "word_33",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 112.05467415507485
+      },
+      {
+        "source": "word_24",
+        "target": "word_28",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 213.21585306913744
+      },
+      {
+        "source": "word_25",
+        "target": "word_21",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 51.090605790105876
+      },
+      {
+        "source": "word_25",
+        "target": "word_20",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 55.66192594583842
+      },
+      {
+        "source": "word_25",
+        "target": "word_30",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 60.466933112239126
+      },
+      {
+        "source": "word_25",
+        "target": "word_26",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 60.878978309429606
+      },
+      {
+        "source": "word_26",
+        "target": "word_21",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 51.56064390598706
+      },
+      {
+        "source": "word_26",
+        "target": "word_25",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 60.878978309429606
+      },
+      {
+        "source": "word_26",
+        "target": "word_30",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 77.54031209635411
+      },
+      {
+        "source": "word_26",
+        "target": "word_34",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 101.35704218257358
+      },
+      {
+        "source": "word_27",
+        "target": "word_22",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 54.389796837274545
+      },
+      {
+        "source": "word_27",
+        "target": "word_31",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 58.97669031066426
+      },
+      {
+        "source": "word_27",
+        "target": "word_30",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 72.53275122315436
+      },
+      {
+        "source": "word_27",
+        "target": "word_25",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 100.83774095049928
+      },
+      {
+        "source": "word_28",
+        "target": "word_32",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 55.7718567021038
+      },
+      {
+        "source": "word_28",
+        "target": "word_19",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 110.65260954898443
+      },
+      {
+        "source": "word_28",
+        "target": "word_23",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 112.81511423563776
+      },
+      {
+        "source": "word_28",
+        "target": "word_36",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 117.00427342623003
+      },
+      {
+        "source": "word_29",
+        "target": "word_24",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 55.556277773083394
+      },
+      {
+        "source": "word_29",
+        "target": "word_33",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 56.50884886458049
+      },
+      {
+        "source": "word_29",
+        "target": "word_23",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 123.2081571974843
+      },
+      {
+        "source": "word_29",
+        "target": "word_28",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 208.50059951952176
+      },
+      {
+        "source": "word_30",
+        "target": "word_34",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 58.54271944486351
+      },
+      {
+        "source": "word_30",
+        "target": "word_25",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 60.466933112239126
+      },
+      {
+        "source": "word_30",
+        "target": "word_27",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 72.53275122315436
+      },
+      {
+        "source": "word_30",
+        "target": "word_26",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 77.54031209635411
+      },
+      {
+        "source": "word_31",
+        "target": "word_27",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 58.97669031066426
+      },
+      {
+        "source": "word_31",
+        "target": "word_35",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 60.60115510450275
+      },
+      {
+        "source": "word_31",
+        "target": "word_30",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 95.92314632037463
+      },
+      {
+        "source": "word_31",
+        "target": "word_34",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 101.58986169889198
+      },
+      {
+        "source": "word_32",
+        "target": "word_28",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 55.7718567021038
+      },
+      {
+        "source": "word_32",
+        "target": "word_36",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 61.6644143732834
+      },
+      {
+        "source": "word_32",
+        "target": "word_23",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 144.42731736067108
+      },
+      {
+        "source": "word_32",
+        "target": "word_19",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 166.42265470782516
+      },
+      {
+        "source": "word_33",
+        "target": "word_29",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 56.50884886458049
+      },
+      {
+        "source": "word_33",
+        "target": "word_24",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 112.05467415507485
+      },
+      {
+        "source": "word_33",
+        "target": "word_23",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 157.68639763784319
+      },
+      {
+        "source": "word_33",
+        "target": "word_32",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 204.0055146313452
+      },
+      {
+        "source": "word_34",
+        "target": "word_30",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 58.54271944486351
+      },
+      {
+        "source": "word_34",
+        "target": "word_37",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 59.01906471641176
+      },
+      {
+        "source": "word_34",
+        "target": "word_26",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 101.35704218257358
+      },
+      {
+        "source": "word_34",
+        "target": "word_31",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 101.58986169889198
+      },
+      {
+        "source": "word_35",
+        "target": "word_31",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 60.60115510450275
+      },
+      {
+        "source": "word_35",
+        "target": "word_37",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 96.39113029734634
+      },
+      {
+        "source": "word_35",
+        "target": "word_34",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 104.0
+      },
+      {
+        "source": "word_35",
+        "target": "word_27",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 117.46169588423282
+      },
+      {
+        "source": "word_36",
+        "target": "word_32",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 61.6644143732834
+      },
+      {
+        "source": "word_36",
+        "target": "word_28",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 117.00427342623003
+      },
+      {
+        "source": "word_36",
+        "target": "word_23",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 197.71254386103072
+      },
+      {
+        "source": "word_36",
+        "target": "word_33",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 216.96140209723941
+      },
+      {
+        "source": "word_37",
+        "target": "word_34",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 59.01906471641176
+      },
+      {
+        "source": "word_37",
+        "target": "word_35",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 96.39113029734634
+      },
+      {
+        "source": "word_37",
+        "target": "word_30",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 116.88669727560959
+      },
+      {
+        "source": "word_37",
+        "target": "word_31",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 126.1913229980572
+      }
+    ]
   }
 }

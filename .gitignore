@@ -8,3 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+yolov8l.pt
+.idea/
+./.gitignore
+venv/
+yolov8x.pt
+.gitignore
+./.gitignore

@@ -14,7 +14,7 @@
   "stats": {
     "num_h_lines": 12,
     "num_v_lines": 0,
-    "num_words": 0,
+    "num_words": 8,
     "num_cells": 0
   },
   "borders": {
@@ -118,7 +118,216 @@
     ],
     "vertical": []
   },
-  "word_to_border_mappings": [],
+  "word_to_border_mappings": [
+    {
+      "word_id": "word_0",
+      "word_text": "Start balance",
+      "word_bbox": [
+        33,
+        12,
+        143,
+        31
+      ],
+      "word_center": [
+        88.0,
+        21.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_1",
+          "position": 16.166666666666668,
+          "distance": 5.333333333333332
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_2",
+          "position": 23.5,
+          "distance": 2.0
+        }
+      }
+    },
+    {
+      "word_id": "word_1",
+      "word_text": "\u00a391,408.29",
+      "word_bbox": [
+        203,
+        10,
+        299,
+        30
+      ],
+      "word_center": [
+        251.0,
+        20.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_1",
+          "position": 16.166666666666668,
+          "distance": 3.833333333333332
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_2",
+          "position": 23.5,
+          "distance": 3.5
+        }
+      }
+    },
+    {
+      "word_id": "word_2",
+      "word_text": "Money in",
+      "word_bbox": [
+        31,
+        47,
+        110,
+        67
+      ],
+      "word_center": [
+        70.5,
+        57.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_4",
+          "position": 46.57692307692308,
+          "distance": 10.42307692307692
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_5",
+          "position": 64.85714285714286,
+          "distance": 7.857142857142861
+        }
+      }
+    },
+    {
+      "word_id": "word_3",
+      "word_text": "\u00a37,837.50",
+      "word_bbox": [
+        214,
+        47,
+        300,
+        67
+      ],
+      "word_center": [
+        257.0,
+        57.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_4",
+          "position": 46.57692307692308,
+          "distance": 10.42307692307692
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_5",
+          "position": 64.85714285714286,
+          "distance": 7.857142857142861
+        }
+      }
+    },
+    {
+      "word_id": "word_4",
+      "word_text": "Money out",
+      "word_bbox": [
+        31,
+        79,
+        126,
+        102
+      ],
+      "word_center": [
+        78.5,
+        90.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_6",
+          "position": 73.91666666666667,
+          "distance": 16.58333333333333
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_7",
+          "position": 92.17857142857143,
+          "distance": 1.6785714285714306
+        }
+      }
+    },
+    {
+      "word_id": "word_5",
+      "word_text": "\u00a35,582.70",
+      "word_bbox": [
+        214,
+        79,
+        300,
+        102
+      ],
+      "word_center": [
+        257.0,
+        90.5
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_6",
+          "position": 73.91666666666667,
+          "distance": 16.58333333333333
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_7",
+          "position": 92.17857142857143,
+          "distance": 1.6785714285714306
+        }
+      }
+    },
+    {
+      "word_id": "word_6",
+      "word_text": "End balance",
+      "word_bbox": [
+        30,
+        112,
+        139,
+        138
+      ],
+      "word_center": [
+        84.5,
+        125.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_10",
+          "position": 121.53333333333333,
+          "distance": 3.4666666666666686
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_11",
+          "position": 130.36363636363637,
+          "distance": 5.363636363636374
+        }
+      }
+    },
+    {
+      "word_id": "word_7",
+      "word_text": "\u00a393.663.09",
+      "word_bbox": [
+        199,
+        115,
+        299,
+        135
+      ],
+      "word_center": [
+        249.0,
+        125.0
+      ],
+      "borders": {
+        "top": {
+          "line_id": "horizontal_merged_10",
+          "position": 121.53333333333333,
+          "distance": 3.4666666666666686
+        },
+        "bottom": {
+          "line_id": "horizontal_merged_11",
+          "position": 130.36363636363637,
+          "distance": 5.363636363636374
+        }
+      }
+    }
+  ],
   "inferred_cells": [],
   "border_graph": {
     "nodes": [
@@ -234,7 +443,361 @@
     "edges": []
   },
   "word_graph": {
-    "nodes": [],
-    "edges": []
+    "nodes": [
+      {
+        "id": "word_0",
+        "text": "Start balance",
+        "bbox": [
+          33,
+          12,
+          143,
+          31
+        ],
+        "center": [
+          88.0,
+          21.5
+        ],
+        "confidence": 0.9970001578330994,
+        "node_type": "word"
+      },
+      {
+        "id": "word_1",
+        "text": "\u00a391,408.29",
+        "bbox": [
+          203,
+          10,
+          299,
+          30
+        ],
+        "center": [
+          251.0,
+          20.0
+        ],
+        "confidence": 0.9587933421134949,
+        "node_type": "word"
+      },
+      {
+        "id": "word_2",
+        "text": "Money in",
+        "bbox": [
+          31,
+          47,
+          110,
+          67
+        ],
+        "center": [
+          70.5,
+          57.0
+        ],
+        "confidence": 0.9997358322143555,
+        "node_type": "word"
+      },
+      {
+        "id": "word_3",
+        "text": "\u00a37,837.50",
+        "bbox": [
+          214,
+          47,
+          300,
+          67
+        ],
+        "center": [
+          257.0,
+          57.0
+        ],
+        "confidence": 0.9975001215934753,
+        "node_type": "word"
+      },
+      {
+        "id": "word_4",
+        "text": "Money out",
+        "bbox": [
+          31,
+          79,
+          126,
+          102
+        ],
+        "center": [
+          78.5,
+          90.5
+        ],
+        "confidence": 0.9997565150260925,
+        "node_type": "word"
+      },
+      {
+        "id": "word_5",
+        "text": "\u00a35,582.70",
+        "bbox": [
+          214,
+          79,
+          300,
+          102
+        ],
+        "center": [
+          257.0,
+          90.5
+        ],
+        "confidence": 0.9915832877159119,
+        "node_type": "word"
+      },
+      {
+        "id": "word_6",
+        "text": "End balance",
+        "bbox": [
+          30,
+          112,
+          139,
+          138
+        ],
+        "center": [
+          84.5,
+          125.0
+        ],
+        "confidence": 0.9998664855957031,
+        "node_type": "word"
+      },
+      {
+        "id": "word_7",
+        "text": "\u00a393.663.09",
+        "bbox": [
+          199,
+          115,
+          299,
+          135
+        ],
+        "center": [
+          249.0,
+          125.0
+        ],
+        "confidence": 0.9484909176826477,
+        "node_type": "word"
+      }
+    ],
+    "edges": [
+      {
+        "source": "word_0",
+        "target": "word_2",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 39.5790348543266
+      },
+      {
+        "source": "word_0",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 69.65091528472544
+      },
+      {
+        "source": "word_0",
+        "target": "word_6",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 103.55916183515585
+      },
+      {
+        "source": "word_0",
+        "target": "word_1",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 163.00690169437613
+      },
+      {
+        "source": "word_1",
+        "target": "word_3",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 37.48332962798263
+      },
+      {
+        "source": "word_1",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 70.75485849042452
+      },
+      {
+        "source": "word_1",
+        "target": "word_7",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 105.01904589168576
+      },
+      {
+        "source": "word_1",
+        "target": "word_0",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 163.00690169437613
+      },
+      {
+        "source": "word_2",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 34.44198019858905
+      },
+      {
+        "source": "word_2",
+        "target": "word_0",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 39.5790348543266
+      },
+      {
+        "source": "word_2",
+        "target": "word_6",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 69.42621983083913
+      },
+      {
+        "source": "word_2",
+        "target": "word_1",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 184.2532224955645
+      },
+      {
+        "source": "word_3",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 33.5
+      },
+      {
+        "source": "word_3",
+        "target": "word_1",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 37.48332962798263
+      },
+      {
+        "source": "word_3",
+        "target": "word_7",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 68.46897107449476
+      },
+      {
+        "source": "word_3",
+        "target": "word_0",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 172.68830302021038
+      },
+      {
+        "source": "word_4",
+        "target": "word_2",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 34.44198019858905
+      },
+      {
+        "source": "word_4",
+        "target": "word_6",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 35.01785258978626
+      },
+      {
+        "source": "word_4",
+        "target": "word_0",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 69.65091528472544
+      },
+      {
+        "source": "word_4",
+        "target": "word_7",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 173.95545406798834
+      },
+      {
+        "source": "word_5",
+        "target": "word_3",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 33.5
+      },
+      {
+        "source": "word_5",
+        "target": "word_7",
+        "direction": "vertical",
+        "edge_type": "down",
+        "distance": 35.415392133929565
+      },
+      {
+        "source": "word_5",
+        "target": "word_1",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 70.75485849042452
+      },
+      {
+        "source": "word_5",
+        "target": "word_6",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 175.9161732189511
+      },
+      {
+        "source": "word_6",
+        "target": "word_4",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 35.01785258978626
+      },
+      {
+        "source": "word_6",
+        "target": "word_2",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 69.42621983083913
+      },
+      {
+        "source": "word_6",
+        "target": "word_0",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 103.55916183515585
+      },
+      {
+        "source": "word_6",
+        "target": "word_7",
+        "direction": "horizontal",
+        "edge_type": "right",
+        "distance": 164.5
+      },
+      {
+        "source": "word_7",
+        "target": "word_5",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 35.415392133929565
+      },
+      {
+        "source": "word_7",
+        "target": "word_3",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 68.46897107449476
+      },
+      {
+        "source": "word_7",
+        "target": "word_1",
+        "direction": "vertical",
+        "edge_type": "up",
+        "distance": 105.01904589168576
+      },
+      {
+        "source": "word_7",
+        "target": "word_6",
+        "direction": "horizontal",
+        "edge_type": "left",
+        "distance": 164.5
+      }
+    ]
   }
 }
