@@ -4,6 +4,15 @@
     115,
     236
   ],
+  "coordinate_space": {
+    "description": "All coordinates (borders, words, cells) are in CROPPED table space",
+    "origin": "Top-left corner of cropped table region",
+    "table_offset_in_original_image": {
+      "x": 658,
+      "y": 477
+    },
+    "to_convert_to_original": "Add table_offset x/y to all x,y coordinates"
+  },
   "detected_bbox": [
     658,
     477,
@@ -301,220 +310,9 @@
           0,
           231,
           28
-        ],
-        "center": [
-          183.0,
-          14.0
-        ],
-        "confidence": 0.9994581937789917,
-        "node_type": "word"
-      },
-      {
-        "id": "word_1",
-        "text": "End balance",
-        "bbox": [
-          135,
-          36,
-          236,
-          58
-        ],
-        "center": [
-          185.5,
-          47.0
-        ],
-        "confidence": 0.999890148639679,
-        "node_type": "word"
-      },
-      {
-        "id": "word_2",
-        "text": "ent",
-        "bbox": [
-          0,
-          90,
-          49,
-          115
-        ],
-        "center": [
-          24.5,
-          102.5
-        ],
-        "confidence": 0.999661922454834,
-        "node_type": "word"
-      },
-      {
-        "id": "word_3",
-        "text": "Your",
-        "bbox": [
-          134,
-          90,
-          189,
-          111
-        ],
-        "center": [
-          161.5,
-          100.5
-        ],
-        "confidence": 0.9998825788497925,
-        "node_type": "word"
-      },
-      {
-        "id": "word_4",
-        "text": "arrar",
-        "bbox": [
-          183,
-          91,
-          235,
-          111
-        ],
-        "center": [
-          209.0,
-          101.0
-        ],
-        "confidence": 0.9928029775619507,
-        "node_type": "word"
+        ]
       }
     ],
-    "edges": [
-      {
-        "source": "word_0",
-        "target": "word_1",
-        "direction": "vertical",
-        "edge_type": "down",
-        "distance": 33.094561486745825
-      },
-      {
-        "source": "word_0",
-        "target": "word_3",
-        "direction": "vertical",
-        "edge_type": "down",
-        "distance": 89.13192469592475
-      },
-      {
-        "source": "word_0",
-        "target": "word_4",
-        "direction": "vertical",
-        "edge_type": "down",
-        "distance": 90.80198235721508
-      },
-      {
-        "source": "word_0",
-        "target": "word_2",
-        "direction": "horizontal",
-        "edge_type": "left",
-        "distance": 181.5337434197841
-      },
-      {
-        "source": "word_1",
-        "target": "word_0",
-        "direction": "vertical",
-        "edge_type": "up",
-        "distance": 33.094561486745825
-      },
-      {
-        "source": "word_1",
-        "target": "word_3",
-        "direction": "vertical",
-        "edge_type": "down",
-        "distance": 58.63659267044769
-      },
-      {
-        "source": "word_1",
-        "target": "word_4",
-        "direction": "vertical",
-        "edge_type": "down",
-        "distance": 58.891850030373476
-      },
-      {
-        "source": "word_1",
-        "target": "word_2",
-        "direction": "horizontal",
-        "edge_type": "left",
-        "distance": 170.29753374608805
-      },
-      {
-        "source": "word_2",
-        "target": "word_3",
-        "direction": "horizontal",
-        "edge_type": "right",
-        "distance": 137.01459776242822
-      },
-      {
-        "source": "word_2",
-        "target": "word_1",
-        "direction": "horizontal",
-        "edge_type": "right",
-        "distance": 170.29753374608805
-      },
-      {
-        "source": "word_2",
-        "target": "word_0",
-        "direction": "horizontal",
-        "edge_type": "right",
-        "distance": 181.5337434197841
-      },
-      {
-        "source": "word_2",
-        "target": "word_4",
-        "direction": "horizontal",
-        "edge_type": "right",
-        "distance": 184.50609746021945
-      },
-      {
-        "source": "word_3",
-        "target": "word_4",
-        "direction": "horizontal",
-        "edge_type": "right",
-        "distance": 47.502631506054485
-      },
-      {
-        "source": "word_3",
-        "target": "word_1",
-        "direction": "vertical",
-        "edge_type": "up",
-        "distance": 58.63659267044769
-      },
-      {
-        "source": "word_3",
-        "target": "word_0",
-        "direction": "vertical",
-        "edge_type": "up",
-        "distance": 89.13192469592475
-      },
-      {
-        "source": "word_3",
-        "target": "word_2",
-        "direction": "horizontal",
-        "edge_type": "left",
-        "distance": 137.01459776242822
-      },
-      {
-        "source": "word_4",
-        "target": "word_3",
-        "direction": "horizontal",
-        "edge_type": "left",
-        "distance": 47.502631506054485
-      },
-      {
-        "source": "word_4",
-        "target": "word_1",
-        "direction": "vertical",
-        "edge_type": "up",
-        "distance": 58.891850030373476
-      },
-      {
-        "source": "word_4",
-        "target": "word_0",
-        "direction": "vertical",
-        "edge_type": "up",
-        "distance": 90.80198235721508
-      },
-      {
-        "source": "word_4",
-        "target": "word_2",
-        "direction": "horizontal",
-        "edge_type": "left",
-        "distance": 184.50609746021945
-      }
-    ]
+    "edges": []
   }
 }

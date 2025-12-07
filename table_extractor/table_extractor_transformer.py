@@ -6,6 +6,7 @@ CRITICAL FIXES:
 1. Table coordinates NOW returned immediately after detection (Step 1)
 2. OCR debugging added - saves input images and checks results
 3. OCR parameters tuned for better detection
+4. Coordinate spaces properly documented
 """
 import os
 
@@ -99,8 +100,6 @@ class HybridTableExtractor:
                 det_db_thresh=0.3,  # Lower threshold for text detection (default 0.3)
                 det_db_box_thresh=0.5,  # Box threshold (default 0.6)
                 rec_batch_num=6,  # Batch size for recognition
-                # Removed: drop_score (doesn't exist)
-                # Removed: use_dilation (doesn't exist)
             )
             print("✓ OCR loaded with enhanced detection parameters\n")
 
@@ -742,14 +741,9 @@ class HybridTableExtractor:
             G.add_node(
                 word['word_id'],
                 text=word['text'],
-                bbox=word['bbox'],
-                center=word['center'],
-                confidence=word['confidence'],
-                node_type='word'
-            )
-
-        if len(words) == 0:
-            print("✗ No words to build graph from")
+                bbox=word['bbox'])
+            if len(words) == 0:
+                print("✗ No words to build graph from")
             return G
 
         if len(words) == 1:
@@ -796,8 +790,11 @@ class HybridTableExtractor:
         print()
         return G
 
-    def infer_cells(self, mappings: List[Dict], debug_prefix: str = 'debug') -> List[Dict]:
-        """STEP 7: Infer cells"""
+    def infer_cells(self, mappings: List[Dict], borders: Dict, debug_prefix: str = 'debug') -> List[Dict]:
+        """
+        STEP 7: Infer cells from word-border mappings
+        NOW INCLUDES ACTUAL CELL BOUNDING BOX COORDINATES
+        """
         print("-" * 30)
         print("STEP 7: CELL INFERENCE")
         print("-" * 30)
@@ -805,30 +802,63 @@ class HybridTableExtractor:
         cell_groups = defaultdict(list)
 
         for mapping in mappings:
+            # Only use words that are fully enclosed by 4 borders
             if 'cell_defined_by' in mapping:
                 signature = mapping['cell_defined_by']
                 cell_groups[signature].append(mapping)
 
         cells = []
         for cell_id, (signature, word_mappings) in enumerate(cell_groups.items()):
-            x1_coords = [m['word_bbox'][0] for m in word_mappings]
-            y1_coords = [m['word_bbox'][1] for m in word_mappings]
-            x2_coords = [m['word_bbox'][2] for m in word_mappings]
-            y2_coords = [m['word_bbox'][3] for m in word_mappings]
+            # Calculate cell bounding box from the border positions
+            first_word = word_mappings[0]
 
-            left_pos = min(x1_coords)
-            top_pos = min(y1_coords)
-            right_pos = max(x2_coords)
-            bottom_pos = max(y2_coords)
+            # Get actual border coordinates
+            top_border = first_word['borders'].get('top', {}).get('position')
+            bottom_border = first_word['borders'].get('bottom', {}).get('position')
+            left_border = first_word['borders'].get('left', {}).get('position')
+            right_border = first_word['borders'].get('right', {}).get('position')
 
+            # Cell bbox defined by border positions
+            if all(b is not None for b in [top_border, bottom_border, left_border, right_border]):
+                cell_bbox = [
+                    int(left_border),
+                    int(top_border),
+                    int(right_border),
+                    int(bottom_border)
+                ]
+            else:
+                # Fallback to word aggregate if borders incomplete
+                x1_coords = [m['word_bbox'][0] for m in word_mappings]
+                y1_coords = [m['word_bbox'][1] for m in word_mappings]
+                x2_coords = [m['word_bbox'][2] for m in word_mappings]
+                y2_coords = [m['word_bbox'][3] for m in word_mappings]
+
+                cell_bbox = [
+                    int(min(x1_coords)),
+                    int(min(y1_coords)),
+                    int(max(x2_coords)),
+                    int(max(y2_coords))
+                ]
+
+            # Sort words based on reading order
             word_mappings.sort(key=lambda m: (m['word_center'][1], m['word_center'][0]))
 
             cells.append({
                 'cell_id': f"cell_{cell_id}",
                 'border_signature': signature,
-                'bbox_word_aggregate': [int(left_pos), int(top_pos), int(right_pos), int(bottom_pos)],
-                'center': [(left_pos + right_pos) / 2, (top_pos + bottom_pos) / 2],
+                'cell_bbox': cell_bbox,
+                'cell_center': [
+                    (cell_bbox[0] + cell_bbox[2]) / 2,
+                    (cell_bbox[1] + cell_bbox[3]) / 2
+                ],
+                'border_positions': {
+                    'top': int(top_border) if top_border else None,
+                    'bottom': int(bottom_border) if bottom_border else None,
+                    'left': int(left_border) if left_border else None,
+                    'right': int(right_border) if right_border else None
+                },
                 'word_ids': [m['word_id'] for m in word_mappings],
+                'word_bboxes': [m['word_bbox'] for m in word_mappings],
                 'text': ' '.join([m['word_text'] for m in word_mappings])
             })
 
@@ -847,14 +877,16 @@ class HybridTableExtractor:
         img = Image.fromarray(image)
         draw = ImageDraw.Draw(img)
 
+        # 1. Draw cells
         np.random.seed(42)
         for cell in cells:
-            x1, y1, x2, y2 = cell['bbox_word_aggregate']
+            x1, y1, x2, y2 = cell['cell_bbox']
             color = (np.random.randint(150, 255),
                      np.random.randint(150, 255),
                      np.random.randint(150, 255))
             draw.rectangle([x1, y1, x2, y2], outline=color, width=2)
 
+        # 2. Draw borders
         for h_line in borders['horizontal']:
             y = int(h_line['position'])
             x1 = int(h_line['start'])
@@ -867,6 +899,7 @@ class HybridTableExtractor:
             y2 = int(v_line['end'])
             draw.line([(x, y1), (x, y2)], fill=(0, 0, 255), width=2)
 
+        # 3. Draw words
         for word in words:
             x1, y1, x2, y2 = word['bbox']
             draw.rectangle([x1, y1, x2, y2], outline=(0, 255, 0), width=1)
@@ -881,9 +914,11 @@ class HybridTableExtractor:
         return img
 
     def _process_single_table_region(self, table_img: np.ndarray,
-                                     output_prefix: str, table_index: int) -> Optional[Dict]:
+                                     output_prefix: str, table_index: int,
+                                     table_offset_x: int = 0, table_offset_y: int = 0) -> Optional[Dict]:
         """Process a single table region"""
         print(f"\n--- Processing Table Region {table_index} ---")
+        print(f"   Table offset in original image: ({table_offset_x}, {table_offset_y})")
 
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
         table_save_path = os.path.join(BASE_DIR, "out", f"{output_prefix}_table{table_index}_00_region.png")
@@ -899,16 +934,21 @@ class HybridTableExtractor:
         if len(words) == 0:
             print(f"⚠️  WARNING: No words detected for Table {table_index}!")
             print(f"   Check the saved OCR input: {current_prefix}_03a_ocr_input.png")
-            # Continue anyway to show borders
 
         mappings = self.map_words_to_borders(words, borders)
         G_borders = self.build_border_graph(borders)
         G_words = self.build_word_graph(words)
-        cells = self.infer_cells(mappings, debug_prefix=current_prefix)
+        cells = self.infer_cells(mappings, borders, debug_prefix=current_prefix)
 
         result = {
             'table_index': table_index,
             'table_image_shape': table_img.shape[:2],
+            'coordinate_space': {
+                'description': 'All coordinates (borders, words, cells) are in CROPPED table space',
+                'origin': 'Top-left corner of cropped table region',
+                'table_offset_in_original_image': {'x': table_offset_x, 'y': table_offset_y},
+                'to_convert_to_original': 'Add table_offset x/y to all x,y coordinates'
+            },
             'borders': borders,
             'words': words,
             'cells': cells,
@@ -932,7 +972,7 @@ class HybridTableExtractor:
     def process_table(self, image_path: str, output_prefix: str = 'output',
                       skip_table_detection: bool = False, visualize: bool = True,
                       detection_threshold: float = 0.03) -> List[Dict[str, Any]]:
-        """Complete pipeline - NOW RETURNS TABLE COORDS IMMEDIATELY AFTER DETECTION"""
+        """Complete pipeline"""
         print("=" * 70)
         print(f"PROCESSING: {image_path}")
         print("=" * 70 + "\n")
@@ -943,17 +983,17 @@ class HybridTableExtractor:
         all_results = []
 
         if not skip_table_detection:
-            # STEP 1: GET TABLE COORDINATES IMMEDIATELY
             tables = self.detect_tables(image_pil, debug_prefix=output_prefix,
                                         detection_threshold=detection_threshold)
 
             if len(tables) == 0:
                 print("✗ No tables detected! Processing full image as one table.")
-                result = self._process_single_table_region(image_np, output_prefix, table_index=1)
+                result = self._process_single_table_region(
+                    image_np, output_prefix, table_index=1, table_offset_x=0, table_offset_y=0
+                )
                 if result:
                     all_results.append(result)
             else:
-                # Process each detected table
                 for i, table in enumerate(tables):
                     print(f"\n{'=' * 70}")
                     print(f"PROCESSING TABLE {i + 1}/{len(tables)}")
@@ -963,15 +1003,19 @@ class HybridTableExtractor:
                     x1, y1, x2, y2 = table['bbox']
                     table_img = image_np[y1:y2, x1:x2]
 
-                    result = self._process_single_table_region(table_img, output_prefix, table_index=i + 1)
+                    result = self._process_single_table_region(
+                        table_img, output_prefix, table_index=i + 1,
+                        table_offset_x=x1, table_offset_y=y1
+                    )
                     if result:
-                        # Add original table detection info to result
                         result['detected_bbox'] = table['bbox']
                         result['detection_confidence'] = table['confidence']
                         all_results.append(result)
         else:
             print("⊗ Skipping table detection - processing full image.")
-            result = self._process_single_table_region(image_np, output_prefix, table_index=1)
+            result = self._process_single_table_region(
+                image_np, output_prefix, table_index=1, table_offset_x=0, table_offset_y=0
+            )
             if result:
                 all_results.append(result)
 
@@ -1018,6 +1062,7 @@ class HybridTableExtractor:
             data = {
                 'table_index': table_idx,
                 'table_image_shape': result['table_image_shape'],
+                'coordinate_space': result['coordinate_space'],
                 'detected_bbox': result.get('detected_bbox'),
                 'detection_confidence': result.get('detection_confidence'),
                 'stats': convert(result['stats']),
