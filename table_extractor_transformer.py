@@ -9,6 +9,8 @@ Pipeline:
 4. Map words to borders → Which words between which lines
 5. Build 3 graphs: Border Graph, Word Graph, Word-Border Mapping
 6. VISUALIZE: Borders, Cells, Words, and Combined views
+
+ENHANCED WITH STEP-BY-STEP DEBUG OUTPUTS
 """
 import os
 
@@ -34,6 +36,7 @@ class HybridTableExtractor:
     Use Table Transformer for DETECTION only (finds table regions)
     Use OpenCV for border extraction (handles colored lines)
     + Visualization capabilities
+    + Full debug output after each step
     """
 
     def __init__(self, use_fp16: bool = True):
@@ -99,12 +102,14 @@ class HybridTableExtractor:
             )
             print("✓ OCR loaded\n")
 
-    def detect_tables(self, image: Image.Image) -> List[Dict]:
+    def detect_tables(self, image: Image.Image, debug_prefix: str = 'debug') -> List[Dict]:
         """
         STEP 1: Use Table Transformer to detect table REGIONS
         This works even with colored borders!
         """
-        print("1. Detecting table regions with Table Transformer...")
+        print("=" * 70)
+        print("STEP 1: TABLE DETECTION")
+        print("=" * 70)
 
         self._load_detection_model()
 
@@ -136,25 +141,53 @@ class HybridTableExtractor:
                     'detection_method': 'table_transformer'
                 })
 
+        # SAVE DETECTION VISUALIZATION
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        debug_path = os.path.join(BASE_DIR, "out", f"{debug_prefix}_01_table_detection.png")
+        os.makedirs(os.path.dirname(debug_path), exist_ok=True)
+
+        debug_img = image.copy()
+        draw = ImageDraw.Draw(debug_img)
+        for i, table in enumerate(tables):
+            x1, y1, x2, y2 = table['bbox']
+            draw.rectangle([x1, y1, x2, y2], outline='red', width=5)
+            draw.text((x1, y1 - 20), f"Table {i + 1} (conf:{table['confidence']:.2f})", fill='red')
+        debug_img.save(debug_path)
+        print(f"✓ Saved detection visualization: {debug_path}")
+        print(f"✓ Found {len(tables)} table(s)")
+
+        if len(tables) > 0:
+            for i, table in enumerate(tables):
+                print(f"  Table {i + 1}: bbox={table['bbox']}, confidence={table['confidence']:.3f}")
+
         # Cleanup
         del pixel_values, outputs, results
         self._clear_memory()
         self._unload_detection_model()
 
-        print(f"   ✓ Found {len(tables)} table(s)\n")
+        print()
         return tables
 
-    def extract_borders(self, image: np.ndarray, min_length: int = 30) -> Dict:
+    def extract_borders(self, image: np.ndarray, min_length: int = 30,
+                        debug_prefix: str = 'debug') -> Dict:
         """
         STEP 2: Extract borders/lines using OpenCV
         Works with ANY color (red, blue, green, black, etc.)
         """
-        print("2. Extracting borders (ANY color)...")
+        print("=" * 70)
+        print("STEP 2: BORDER EXTRACTION")
+        print("=" * 70)
 
         gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
         # Edge detection (color-agnostic)
         edges = cv2.Canny(gray, 40, 120, apertureSize=3)
+
+        # SAVE EDGE DETECTION OUTPUT
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        edges_path = os.path.join(BASE_DIR, "out", f"{debug_prefix}_02a_edges.png")
+        cv2.imwrite(edges_path, edges)
+        print(f"✓ Saved edge detection: {edges_path}")
 
         # Hough Line Transform - finds line segments
         lines = cv2.HoughLinesP(
@@ -216,8 +249,29 @@ class HybridTableExtractor:
         horizontal_lines.sort(key=lambda l: l['position'])
         vertical_lines.sort(key=lambda l: l['position'])
 
-        print(f"   ✓ Found {len(horizontal_lines)} horizontal borders")
-        print(f"   ✓ Found {len(vertical_lines)} vertical borders\n")
+        # SAVE BORDER VISUALIZATION
+        border_vis = Image.fromarray(image)
+        draw = ImageDraw.Draw(border_vis)
+
+        for h_line in horizontal_lines:
+            y = int(h_line['position'])
+            x1 = int(h_line['start'])
+            x2 = int(h_line['end'])
+            draw.line([(x1, y), (x2, y)], fill=(255, 0, 0), width=3)
+
+        for v_line in vertical_lines:
+            x = int(v_line['position'])
+            y1 = int(v_line['start'])
+            y2 = int(v_line['end'])
+            draw.line([(x, y1), (x, y2)], fill=(0, 0, 255), width=3)
+
+        border_path = os.path.join(BASE_DIR, "out", f"{debug_prefix}_02b_borders.png")
+        border_vis.save(border_path)
+        print(f"✓ Saved border visualization: {border_path}")
+
+        print(f"✓ Found {len(horizontal_lines)} horizontal borders")
+        print(f"✓ Found {len(vertical_lines)} vertical borders")
+        print()
 
         return {
             'horizontal': horizontal_lines,
@@ -261,11 +315,41 @@ class HybridTableExtractor:
 
         return merged
 
-    def extract_words(self, image: np.ndarray) -> List[Dict]:
+    def extract_words(self, image: np.ndarray, debug_prefix: str = 'debug') -> List[Dict]:
+        """
+        STEP 3: Extract words with OCR
+        """
+        print("=" * 70)
+        print("STEP 3: OCR TEXT EXTRACTION")
+        print("=" * 70)
+
         self._load_ocr()
 
-        print("3. Extracting words with OCR...")
+        # SAVE THE IMAGE BEING PROCESSED FOR DEBUGGING
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        debug_path = os.path.join(BASE_DIR, "out", f"{debug_prefix}_03a_ocr_input.png")
+        cv2.imwrite(debug_path, cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+        print(f"✓ Saved OCR input image: {debug_path}")
+        print(f"✓ Image shape: {image.shape}")
+
         result = self.ocr.ocr(image)
+
+        # DEBUG: Print raw OCR result structure
+        print(f"✓ Raw OCR result type: {type(result)}")
+
+        if result is None:
+            print("✗ OCR returned None!")
+            return []
+
+        if len(result) == 0:
+            print("✗ OCR returned empty list!")
+            return []
+
+        if result[0] is None:
+            print("✗ OCR result[0] is None!")
+            return []
+
+        print(f"✓ OCR detected {len(result[0])} text regions")
 
         words = []
         word_id = 0
@@ -300,7 +384,26 @@ class HybridTableExtractor:
                 })
                 word_id += 1
 
-        print(f"   ✓ Found {len(words)} words\n")
+        # SAVE WORD VISUALIZATION
+        word_vis = Image.fromarray(image)
+        draw = ImageDraw.Draw(word_vis)
+
+        for word in words:
+            x1, y1, x2, y2 = word['bbox']
+            draw.rectangle([x1, y1, x2, y2], outline=(0, 255, 0), width=2)
+            cx, cy = word['center']
+            r = 3
+            draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 0, 0))
+
+        word_path = os.path.join(BASE_DIR, "out", f"{debug_prefix}_03b_words.png")
+        word_vis.save(word_path)
+        print(f"✓ Saved word visualization: {word_path}")
+        print(f"✓ Extracted {len(words)} words")
+
+        if len(words) > 0:
+            print(f"  Sample words: {[w['text'] for w in words[:5]]}")
+
+        print()
         return words
 
     def map_words_to_borders(self, words: List[Dict], borders: Dict) -> List[Dict]:
@@ -308,7 +411,9 @@ class HybridTableExtractor:
         STEP 4: Map each word to surrounding borders
         Returns which borders (lines) surround each word
         """
-        print("4. Mapping words to borders...")
+        print("=" * 70)
+        print("STEP 4: WORD-TO-BORDER MAPPING")
+        print("=" * 70)
 
         h_lines = borders['horizontal']
         v_lines = borders['vertical']
@@ -372,7 +477,8 @@ class HybridTableExtractor:
 
             mappings.append(mapping)
 
-        print(f"   ✓ Created {len(mappings)} word-to-border mappings\n")
+        print(f"✓ Created {len(mappings)} word-to-border mappings")
+        print()
         return mappings
 
     def _find_closest_line(self, position: float, lines: List[Dict],
@@ -400,10 +506,12 @@ class HybridTableExtractor:
 
     def build_border_graph(self, borders: Dict) -> nx.Graph:
         """
-        GRAPH 1: Border Graph
+        STEP 5: Build Border Graph
         Nodes = lines, Edges = intersections
         """
-        print("5. Building BORDER GRAPH...")
+        print("=" * 70)
+        print("STEP 5: BUILD BORDER GRAPH")
+        print("=" * 70)
 
         G = nx.Graph()
 
@@ -441,15 +549,18 @@ class HybridTableExtractor:
                         edge_type='intersection'
                     )
 
-        print(f"   ✓ Border Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges\n")
+        print(f"✓ Border Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+        print()
         return G
 
     def build_word_graph(self, words: List[Dict], k: int = 4) -> nx.DiGraph:
         """
-        GRAPH 2: Word Graph
+        STEP 6: Build Word Graph
         Nodes = words, Edges = spatial proximity
         """
-        print("6. Building WORD GRAPH...")
+        print("=" * 70)
+        print("STEP 6: BUILD WORD GRAPH")
+        print("=" * 70)
 
         G = nx.DiGraph()
 
@@ -487,12 +598,17 @@ class HybridTableExtractor:
                 G.add_edge(w1['word_id'], w2['word_id'],
                            direction=direction, edge_type=edge_type, distance=dist)
 
-        print(f"   ✓ Word Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges\n")
+        print(f"✓ Word Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+        print()
         return G
 
-    def infer_cells(self, mappings: List[Dict]) -> List[Dict]:
-        """Infer cells from word-border mappings"""
-        print("7. Inferring cells from border patterns...")
+    def infer_cells(self, mappings: List[Dict], debug_prefix: str = 'debug') -> List[Dict]:
+        """
+        STEP 7: Infer cells from word-border mappings
+        """
+        print("=" * 70)
+        print("STEP 7: CELL INFERENCE")
+        print("=" * 70)
 
         cell_groups = defaultdict(list)
 
@@ -521,90 +637,21 @@ class HybridTableExtractor:
                 'text': ' '.join([m['word_text'] for m in word_mappings])
             })
 
-        print(f"   ✓ Inferred {len(cells)} cells\n")
+        print(f"✓ Inferred {len(cells)} cells")
+        print()
         return cells
 
     # ============================================
     # VISUALIZATION METHODS
     # ============================================
 
-    def visualize_borders(self, image: np.ndarray, borders: Dict,
-                          output_path: str = 'viz_borders.png'):
-        """Visualize detected borders"""
-        print("Visualizing borders...")
-
-        img = Image.fromarray(image)
-        draw = ImageDraw.Draw(img)
-
-        # Draw horizontal lines (RED)
-        for h_line in borders['horizontal']:
-            y = int(h_line['position'])
-            x1 = int(h_line['start'])
-            x2 = int(h_line['end'])
-            draw.line([(x1, y), (x2, y)], fill=(255, 0, 0), width=3)
-
-        # Draw vertical lines (BLUE)
-        for v_line in borders['vertical']:
-            x = int(v_line['position'])
-            y1 = int(v_line['start'])
-            y2 = int(v_line['end'])
-            draw.line([(x, y1), (x, y2)], fill=(0, 0, 255), width=3)
-
-        img.save(output_path)
-        print(f"   ✓ Saved: {output_path}\n")
-        return img
-
-    def visualize_cells(self, image: np.ndarray, cells: List[Dict],
-                        output_path: str = 'viz_cells.png'):
-        """Visualize inferred cells"""
-        print("Visualizing cells...")
-
-        img = Image.fromarray(image)
-        draw = ImageDraw.Draw(img)
-
-        # Generate colors for cells
-        np.random.seed(42)
-        colors = [(np.random.randint(50, 255),
-                   np.random.randint(50, 255),
-                   np.random.randint(50, 255)) for _ in cells]
-
-        # Draw cells
-        for cell, color in zip(cells, colors):
-            x1, y1, x2, y2 = cell['bbox']
-            # Draw filled rectangle with transparency (simulate)
-            draw.rectangle([x1, y1, x2, y2], outline=color, width=3)
-
-        img.save(output_path)
-        print(f"   ✓ Saved: {output_path}\n")
-        return img
-
-    def visualize_words(self, image: np.ndarray, words: List[Dict],
-                        output_path: str = 'viz_words.png'):
-        """Visualize detected words"""
-        print("Visualizing words...")
-
-        img = Image.fromarray(image)
-        draw = ImageDraw.Draw(img)
-
-        # Draw word bounding boxes (GREEN)
-        for word in words:
-            x1, y1, x2, y2 = word['bbox']
-            draw.rectangle([x1, y1, x2, y2], outline=(0, 255, 0), width=2)
-
-            # Draw center point
-            cx, cy = word['center']
-            r = 3
-            draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 0, 0))
-
-        img.save(output_path)
-        print(f"   ✓ Saved: {output_path}\n")
-        return img
-
-    def visualize_all(self, image: np.ndarray, borders: Dict,
-                      cells: List[Dict], words: List[Dict],
-                      output_path: str = 'viz_all.png'):
+    def visualize_all_combined(self, image: np.ndarray, borders: Dict,
+                               cells: List[Dict], words: List[Dict],
+                               output_path: str = 'viz_all.png'):
         """Visualize everything together"""
-        print("Visualizing all components...")
+        print("=" * 70)
+        print("FINAL VISUALIZATION")
+        print("=" * 70)
 
         img = Image.fromarray(image)
         draw = ImageDraw.Draw(img)
@@ -641,7 +688,8 @@ class HybridTableExtractor:
             draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 0, 0))
 
         img.save(output_path)
-        print(f"   ✓ Saved: {output_path}\n")
+        print(f"✓ Saved final visualization: {output_path}")
+        print()
         return img
 
     # ============================================
@@ -649,8 +697,8 @@ class HybridTableExtractor:
     # ============================================
 
     def process_table(self, image_path: str, output_prefix: str = 'output',
-                      visualize: bool = True) -> Optional[Dict]:
-        """Complete pipeline with optional visualization"""
+                      skip_table_detection: bool = False) -> Optional[Dict]:
+        """Complete pipeline with step-by-step debug output"""
         print("=" * 70)
         print(f"PROCESSING: {image_path}")
         print("=" * 70 + "\n")
@@ -659,26 +707,37 @@ class HybridTableExtractor:
         image_pil = Image.open(image_path).convert("RGB")
         image_np = np.array(image_pil)
 
-        # Step 1: Table Transformer detects table REGION
-        tables = self.detect_tables(image_pil)
+        # Step 1: Table Transformer detects table REGION (or skip)
+        if not skip_table_detection:
+            tables = self.detect_tables(image_pil, debug_prefix=output_prefix)
 
-        if len(tables) == 0:
-            print("✗ No tables detected!")
-            return None
+            if len(tables) == 0:
+                print("✗ No tables detected! Trying full image instead...")
+                table_img = image_np
+            else:
+                # Crop to table
+                table = tables[0]
+                x1, y1, x2, y2 = table['bbox']
+                table_img = image_np[y1:y2, x1:x2]
+        else:
+            print("⊗ Skipping table detection - using full image")
+            table_img = image_np
 
-        # Crop to table
-        table = tables[0]
-        x1, y1, x2, y2 = table['bbox']
-        table_img = image_np[y1:y2, x1:x2]
+        # Save the cropped/full table image
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        table_save_path = os.path.join(BASE_DIR, "out", f"{output_prefix}_00_table_region.png")
+        os.makedirs(os.path.dirname(table_save_path), exist_ok=True)
+        cv2.imwrite(table_save_path, cv2.cvtColor(table_img, cv2.COLOR_RGB2BGR))
+        print(f"✓ Saved table region: {table_save_path}\n")
 
         # Step 2: Extract borders (OpenCV)
-        borders = self.extract_borders(table_img)
+        borders = self.extract_borders(table_img, debug_prefix=output_prefix)
 
         # Step 3: Extract words (OCR)
-        words = self.extract_words(table_img)
+        words = self.extract_words(table_img, debug_prefix=output_prefix)
 
         if len(words) == 0:
-            print("✗ No words detected!")
+            print("✗ No words detected! Cannot continue.")
             return None
 
         # Step 4: Map words to borders
@@ -691,7 +750,7 @@ class HybridTableExtractor:
         G_words = self.build_word_graph(words)
 
         # Step 7: Infer cells
-        cells = self.infer_cells(mappings)
+        cells = self.infer_cells(mappings, debug_prefix=output_prefix)
 
         result = {
             'table_image': table_img,
@@ -709,34 +768,25 @@ class HybridTableExtractor:
             }
         }
 
-        # Visualizations
-        if visualize:
-            print("=" * 70)
-            print("CREATING VISUALIZATIONS")
-            print("=" * 70 + "\n")
-            BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-            output_prefix = os.path.join(BASE_DIR, "out")
-
-            self.visualize_borders(table_img, borders, os.path.join(output_prefix, "table.png"))
-            self.visualize_cells(table_img, cells, os.path.join(output_prefix, "cells.png"))
-            self.visualize_words(table_img, words, os.path.join(output_prefix, "words.png"))
-            self.visualize_all(table_img, borders, cells, words, os.path.join(output_prefix, "all.png"))
+        # Final combined visualization
+        final_path = os.path.join(BASE_DIR, "out", f"{output_prefix}_99_final.png")
+        self.visualize_all_combined(table_img, borders, cells, words, final_path)
 
         print("=" * 70)
-        print("SUCCESS")
+        print("PIPELINE COMPLETE - SUMMARY")
         print("=" * 70)
-        print(f"Horizontal borders: {len(borders['horizontal'])}")
-        print(f"Vertical borders: {len(borders['vertical'])}")
-        print(f"Words: {len(words)}")
-        print(f"Inferred cells: {len(cells)}")
-        print(f"Border graph: {G_borders.number_of_nodes()} nodes, {G_borders.number_of_edges()} edges")
-        print(f"Word graph: {G_words.number_of_nodes()} nodes, {G_words.number_of_edges()} edges")
+        print(f"✓ Horizontal borders: {len(borders['horizontal'])}")
+        print(f"✓ Vertical borders: {len(borders['vertical'])}")
+        print(f"✓ Words extracted: {len(words)}")
+        print(f"✓ Cells inferred: {len(cells)}")
+        print(f"✓ Border graph: {G_borders.number_of_nodes()} nodes, {G_borders.number_of_edges()} edges")
+        print(f"✓ Word graph: {G_words.number_of_nodes()} nodes, {G_words.number_of_edges()} edges")
         print()
 
         return result
 
     def export_json(self, result: Dict, output_path: str):
-        """Export everything"""
+        """Export everything to JSON"""
 
         def convert(obj):
             if isinstance(obj, (np.integer, np.floating)):

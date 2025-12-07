@@ -1,6 +1,6 @@
 import os
 
-from table_extractor import HybridTableExtractor
+from table_extractor_transformer import HybridTableExtractor
 
 if __name__ == "__main__":
     extractor = HybridTableExtractor(use_fp16=True)
@@ -9,7 +9,7 @@ if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     image_path = os.path.join(BASE_DIR, "dataset", "1.jpg")
 
-    result = extractor.process_table(image_path, output_prefix='output', visualize=True)
+    result = extractor.process_table(image_path, output_prefix='output')
 
     if result:
         # Export JSON
