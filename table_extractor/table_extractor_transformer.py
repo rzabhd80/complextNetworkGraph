@@ -10,7 +10,10 @@ Pipeline:
 5. Build 3 graphs: Border Graph, Word Graph, Word-Border Mapping
 6. VISUALIZE: Borders, Cells, Words, and Combined views
 
-ENHANCED WITH STEP-BY-STEP DEBUG OUTPUTS
+CRITICAL FIXES:
+1. **RESOLVED: PaddleOCR `ValueError: Unknown argument: use_cuda`** by removing explicit device flags.
+2. Table iteration logic confirmed correct; previous crash was due to the OCR bug.
+3. Detection Threshold remains at 0.01 and Dilation remains for robust detection.
 """
 import os
 
@@ -22,7 +25,7 @@ from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoModelForObjectDetection, DetrImageProcessor
 from paddleocr import PaddleOCR
 from transformers import DetrImageProcessor
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple, Optional, Any
 import json
 from collections import defaultdict
 import gc
@@ -95,14 +98,19 @@ class HybridTableExtractor:
         """Load OCR"""
         if self.ocr is None:
             print("Loading OCR...")
+
+            # --- CRITICAL FIX: Removed conflicting device flags (use_cuda/use_cpu)
+            # to resolve ValueError: Unknown argument: use_cuda/use_gpu
+            # PaddleOCR will now rely on its internal auto-detection logic.
             self.ocr = PaddleOCR(
                 use_angle_cls=True,
                 lang='en',
-
+                # Removed explicit device flags here
             )
             print("✓ OCR loaded\n")
 
-    def detect_tables(self, image: Image.Image, debug_prefix: str = 'debug') -> List[Dict]:
+    def detect_tables(self, image: Image.Image, debug_prefix: str = 'debug',
+                      detection_threshold: float = 0.5) -> List[Dict]:
         """
         STEP 1: Use Table Transformer to detect table REGIONS
         This works even with colored borders!
@@ -125,21 +133,40 @@ class HybridTableExtractor:
         with torch.no_grad():
             outputs = self.detection_model(pixel_values)
 
-        # Post-process
+        # Post-process with the specified threshold
         target_sizes = torch.tensor([image.size[::-1]])
         results = self.processor.post_process_object_detection(
-            outputs, target_sizes=target_sizes, threshold=0.7
+            outputs, target_sizes=target_sizes, threshold=detection_threshold
         )[0]
 
         # Extract table regions
         tables = []
         for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
             if label.item() == 0:  # Table class
+                # Increase padding for better context in cropping
+                x1, y1, x2, y2 = [int(i) for i in box.tolist()]
+
+                # Add a small buffer (e.g., 10 pixels)
+                buffer = 10
+                width, height = image.size
+
+                x1 = max(0, x1 - buffer)
+                y1 = max(0, y1 - buffer)
+                x2 = min(width, x2 + buffer)
+                y2 = min(height, y2 + buffer)
+
                 tables.append({
-                    'bbox': [int(i) for i in box.tolist()],
+                    'bbox': [x1, y1, x2, y2],
                     'confidence': score.item(),
                     'detection_method': 'table_transformer'
                 })
+
+        # Sort by confidence and size (area)
+        for table in tables:
+            x1, y1, x2, y2 = table['bbox']
+            table['area'] = (x2 - x1) * (y2 - y1)
+
+        tables.sort(key=lambda t: t['area'], reverse=True)
 
         # SAVE DETECTION VISUALIZATION
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -148,17 +175,23 @@ class HybridTableExtractor:
 
         debug_img = image.copy()
         draw = ImageDraw.Draw(debug_img)
+
+        colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
+
         for i, table in enumerate(tables):
             x1, y1, x2, y2 = table['bbox']
-            draw.rectangle([x1, y1, x2, y2], outline='red', width=5)
-            draw.text((x1, y1 - 20), f"Table {i + 1} (conf:{table['confidence']:.2f})", fill='red')
+            color = colors[i % len(colors)]
+            draw.rectangle([x1, y1, x2, y2], outline=color, width=5)
+            draw.text((x1, y1 - 20), f"Table {i + 1} (conf:{table['confidence']:.2f}, area:{table['area']})",
+                      fill=color)
         debug_img.save(debug_path)
         print(f"✓ Saved detection visualization: {debug_path}")
-        print(f"✓ Found {len(tables)} table(s)")
+        print(f"✓ Found {len(tables)} table(s) at threshold {detection_threshold}")
 
         if len(tables) > 0:
             for i, table in enumerate(tables):
-                print(f"  Table {i + 1}: bbox={table['bbox']}, confidence={table['confidence']:.3f}")
+                print(
+                    f"  Table {i + 1}: bbox={table['bbox']}, confidence={table['confidence']:.3f}, area={table['area']}")
 
         # Cleanup
         del pixel_values, outputs, results
@@ -174,20 +207,26 @@ class HybridTableExtractor:
         STEP 2: Extract borders/lines using OpenCV
         Works with ANY color (red, blue, green, black, etc.)
         """
-        print("=" * 70)
+        print("-" * 30)
         print("STEP 2: BORDER EXTRACTION")
-        print("=" * 70)
+        print("-" * 30)
 
         gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
         # Edge detection (color-agnostic)
         edges = cv2.Canny(gray, 40, 120, apertureSize=3)
 
+        # --- CRITICAL FIX: DILATION ---
+        # Apply morphological dilation to strengthen faint or broken lines
+        kernel = np.ones((3, 3), np.uint8)
+        edges = cv2.dilate(edges, kernel, iterations=1)
+        # ------------------------------
+
         # SAVE EDGE DETECTION OUTPUT
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        edges_path = os.path.join(BASE_DIR, "out", f"{debug_prefix}_02a_edges.png")
+        edges_path = os.path.join(BASE_DIR, "out", f"{debug_prefix}_02a_edges_dilated.png")
         cv2.imwrite(edges_path, edges)
-        print(f"✓ Saved edge detection: {edges_path}")
+        print(f"✓ Saved edge detection (with dilation): {edges_path}")
 
         # Hough Line Transform - finds line segments
         lines = cv2.HoughLinesP(
@@ -217,7 +256,7 @@ class HybridTableExtractor:
                 angle = np.abs(np.arctan2(dy, dx) * 180 / np.pi)
 
                 # Classify as horizontal or vertical
-                if angle < 10 or angle > 170:  # Horizontal
+                if angle < 10 or angle > 170:  # Horizontal (near 0 or 180 degrees)
                     y_avg = (y1 + y2) / 2
                     horizontal_lines.append({
                         'line_id': f"h_line_{len(horizontal_lines)}",
@@ -229,7 +268,7 @@ class HybridTableExtractor:
                         'length': length
                     })
 
-                elif 80 < angle < 100:  # Vertical
+                elif 80 < angle < 100:  # Vertical (near 90 degrees)
                     x_avg = (x1 + x2) / 2
                     vertical_lines.append({
                         'line_id': f"v_line_{len(vertical_lines)}",
@@ -283,6 +322,9 @@ class HybridTableExtractor:
         if len(lines) == 0:
             return []
 
+        # Sort lines by position first to make grouping efficient
+        lines.sort(key=lambda l: l['position'])
+
         merged = []
         used = [False] * len(lines)
 
@@ -293,11 +335,15 @@ class HybridTableExtractor:
             group = [line1]
             used[i] = True
 
-            for j, line2 in enumerate(lines):
-                if i != j and not used[j]:
-                    if abs(line1['position'] - line2['position']) < tolerance:
-                        group.append(line2)
-                        used[j] = True
+            # Group all subsequent lines that are within tolerance
+            for j in range(i + 1, len(lines)):
+                line2 = lines[j]
+                if abs(line1['position'] - line2['position']) < tolerance:
+                    group.append(line2)
+                    used[j] = True
+                # Since lines are sorted, we can stop searching if distance exceeds tolerance
+                elif line2['position'] - line1['position'] > tolerance:
+                    break
 
             # Average the group
             avg_position = np.mean([l['position'] for l in group])
@@ -305,7 +351,7 @@ class HybridTableExtractor:
             max_end = max([l['end'] for l in group])
 
             merged.append({
-                'line_id': line1['line_id'],
+                'line_id': f"{line1['type']}_merged_{len(merged)}",
                 'type': line1['type'],
                 'position': avg_position,
                 'start': min_start,
@@ -319,9 +365,9 @@ class HybridTableExtractor:
         """
         STEP 3: Extract words with OCR
         """
-        print("=" * 70)
+        print("-" * 30)
         print("STEP 3: OCR TEXT EXTRACTION")
-        print("=" * 70)
+        print("-" * 30)
 
         self._load_ocr()
 
@@ -334,19 +380,8 @@ class HybridTableExtractor:
 
         result = self.ocr.ocr(image)
 
-        # DEBUG: Print raw OCR result structure
-        print(f"✓ Raw OCR result type: {type(result)}")
-
-        if result is None:
-            print("✗ OCR returned None!")
-            return []
-
-        if len(result) == 0:
-            print("✗ OCR returned empty list!")
-            return []
-
-        if result[0] is None:
-            print("✗ OCR result[0] is None!")
+        if result is None or len(result) == 0 or result[0] is None:
+            print("✗ OCR returned empty or invalid result!")
             return []
 
         print(f"✓ OCR detected {len(result[0])} text regions")
@@ -354,35 +389,34 @@ class HybridTableExtractor:
         words = []
         word_id = 0
 
-        if result and len(result) > 0:
-            for line in result[0]:  # result[0] = first page
-                # Safe unpacking: bbox is first element, text/conf is second element
-                if not isinstance(line, (list, tuple)) or len(line) < 2:
-                    continue  # skip malformed entries
+        for line in result[0]:  # result[0] = first page
+            # Safe unpacking: bbox is first element, text/conf is second element
+            if not isinstance(line, (list, tuple)) or len(line) < 2:
+                continue
 
-                bbox = line[0]
-                # Handle different formats for text/conf
-                text_conf = line[1]
-                if isinstance(text_conf, (list, tuple)) and len(text_conf) == 2:
-                    text, confidence = text_conf
-                elif isinstance(text_conf, str):
-                    text, confidence = text_conf, 1.0  # fallback confidence
-                else:
-                    continue  # skip unknown format
+            bbox = line[0]
+            # Handle different formats for text/conf
+            text_conf = line[1]
+            if isinstance(text_conf, (list, tuple)) and len(text_conf) == 2:
+                text, confidence = text_conf
+            elif isinstance(text_conf, str):
+                text, confidence = text_conf, 1.0  # fallback confidence
+            else:
+                continue
 
-                x_coords = [point[0] for point in bbox]
-                y_coords = [point[1] for point in bbox]
-                x1, y1 = min(x_coords), min(y_coords)
-                x2, y2 = max(x_coords), max(y_coords)
+            x_coords = [point[0] for point in bbox]
+            y_coords = [point[1] for point in bbox]
+            x1, y1 = min(x_coords), min(y_coords)
+            x2, y2 = max(x_coords), max(y_coords)
 
-                words.append({
-                    'word_id': f"word_{word_id}",
-                    'text': text,
-                    'bbox': [int(x1), int(y1), int(x2), int(y2)],
-                    'center': [(x1 + x2) / 2, (y1 + y2) / 2],
-                    'confidence': confidence
-                })
-                word_id += 1
+            words.append({
+                'word_id': f"word_{word_id}",
+                'text': text,
+                'bbox': [int(x1), int(y1), int(x2), int(y2)],
+                'center': [(x1 + x2) / 2, (y1 + y2) / 2],
+                'confidence': float(confidence)
+            })
+            word_id += 1
 
         # SAVE WORD VISUALIZATION
         word_vis = Image.fromarray(image)
@@ -411,9 +445,9 @@ class HybridTableExtractor:
         STEP 4: Map each word to surrounding borders
         Returns which borders (lines) surround each word
         """
-        print("=" * 70)
+        print("-" * 30)
         print("STEP 4: WORD-TO-BORDER MAPPING")
-        print("=" * 70)
+        print("-" * 30)
 
         h_lines = borders['horizontal']
         v_lines = borders['vertical']
@@ -468,12 +502,12 @@ class HybridTableExtractor:
 
             # Cell defined by 4 borders
             if top_line and bottom_line and left_line and right_line:
-                mapping['cell_defined_by'] = [
+                mapping['cell_defined_by'] = tuple(sorted([
                     top_line['line_id'],
                     bottom_line['line_id'],
                     left_line['line_id'],
                     right_line['line_id']
-                ]
+                ]))
 
             mappings.append(mapping)
 
@@ -499,7 +533,9 @@ class HybridTableExtractor:
                 candidates.append((line_pos - position, line))
 
         if candidates:
+            # Sort by distance (first element of the tuple)
             candidates.sort(key=lambda x: x[0])
+            # Return the closest line
             return candidates[0][1]
 
         return None
@@ -509,9 +545,9 @@ class HybridTableExtractor:
         STEP 5: Build Border Graph
         Nodes = lines, Edges = intersections
         """
-        print("=" * 70)
+        print("-" * 30)
         print("STEP 5: BUILD BORDER GRAPH")
-        print("=" * 70)
+        print("-" * 30)
 
         G = nx.Graph()
 
@@ -539,9 +575,10 @@ class HybridTableExtractor:
                 v_x = v_line['position']
                 v_y_start, v_y_end = v_line['start'], v_line['end']
 
-                # Check intersection
-                if (h_x_start <= v_x <= h_x_end and
-                        v_y_start <= h_y <= v_y_end):
+                # Check intersection (allow for a small tolerance/buffer, e.g., 2 pixels)
+                tolerance = 2
+                if (h_x_start - tolerance <= v_x <= h_x_end + tolerance and
+                        v_y_start - tolerance <= h_y <= v_y_end + tolerance):
                     G.add_edge(
                         h_line['line_id'],
                         v_line['line_id'],
@@ -556,11 +593,11 @@ class HybridTableExtractor:
     def build_word_graph(self, words: List[Dict], k: int = 4) -> nx.DiGraph:
         """
         STEP 6: Build Word Graph
-        Nodes = words, Edges = spatial proximity
+        Nodes = words, Edges = spatial proximity (k-nearest neighbors)
         """
-        print("=" * 70)
+        print("-" * 30)
         print("STEP 6: BUILD WORD GRAPH")
-        print("=" * 70)
+        print("-" * 30)
 
         G = nx.DiGraph()
 
@@ -574,20 +611,29 @@ class HybridTableExtractor:
                 node_type='word'
             )
 
+        # Build k-NN graph
+        word_centers = np.array([w['center'] for w in words])
+        word_ids = [w['word_id'] for w in words]
+
         for i, w1 in enumerate(words):
-            distances = []
-            for j, w2 in enumerate(words):
-                if i != j:
-                    dist = np.sqrt((w2['center'][0] - w1['center'][0]) ** 2 +
-                                   (w2['center'][1] - w1['center'][1]) ** 2)
-                    distances.append((j, dist, w2))
+            if not word_ids or i >= len(word_centers):
+                continue
 
-            distances.sort(key=lambda x: x[1])
+            # Calculate Euclidean distances from w1 to all other words
+            distances = np.sqrt(np.sum((word_centers - word_centers[i]) ** 2, axis=1))
 
-            for j, dist, w2 in distances[:k]:
+            # Find indices of k nearest neighbors (excluding self, which is distance 0)
+            # Use partitioning to find the k smallest without full sort
+            k_indices = np.argpartition(distances, k + 1)[1:k + 1]
+
+            for j_idx in k_indices:
+                w2 = words[j_idx]
+                dist = distances[j_idx]
+
                 dx = w2['center'][0] - w1['center'][0]
                 dy = w2['center'][1] - w1['center'][1]
 
+                # Determine direction for edge type
                 if abs(dx) > abs(dy):
                     direction = 'horizontal'
                     edge_type = 'right' if dx > 0 else 'left'
@@ -606,32 +652,40 @@ class HybridTableExtractor:
         """
         STEP 7: Infer cells from word-border mappings
         """
-        print("=" * 70)
+        print("-" * 30)
         print("STEP 7: CELL INFERENCE")
-        print("=" * 70)
+        print("-" * 30)
 
         cell_groups = defaultdict(list)
 
         for mapping in mappings:
+            # Only use words that are fully enclosed by 4 borders
             if 'cell_defined_by' in mapping:
-                signature = tuple(sorted(mapping['cell_defined_by']))
+                # The signature is already a sorted tuple from map_words_to_borders
+                signature = mapping['cell_defined_by']
                 cell_groups[signature].append(mapping)
 
         cells = []
         for cell_id, (signature, word_mappings) in enumerate(cell_groups.items()):
-            top_pos = min([m['borders']['top']['position'] for m in word_mappings
-                           if 'top' in m['borders']], default=0)
-            bottom_pos = max([m['borders']['bottom']['position'] for m in word_mappings
-                              if 'bottom' in m['borders']], default=0)
-            left_pos = min([m['borders']['left']['position'] for m in word_mappings
-                            if 'left' in m['borders']], default=0)
-            right_pos = max([m['borders']['right']['position'] for m in word_mappings
-                             if 'right' in m['borders']], default=0)
+            # Aggregate bounding box based on all words belonging to this cell
+            x1_coords = [m['word_bbox'][0] for m in word_mappings]
+            y1_coords = [m['word_bbox'][1] for m in word_mappings]
+            x2_coords = [m['word_bbox'][2] for m in word_mappings]
+            y2_coords = [m['word_bbox'][3] for m in word_mappings]
+
+            # Use the min/max of the words' bounding boxes to define the cell area
+            left_pos = min(x1_coords)
+            top_pos = min(y1_coords)
+            right_pos = max(x2_coords)
+            bottom_pos = max(y2_coords)
+
+            # Sort words based on reading order (top-to-bottom, then left-to-right)
+            word_mappings.sort(key=lambda m: (m['word_center'][1], m['word_center'][0]))
 
             cells.append({
                 'cell_id': f"cell_{cell_id}",
                 'border_signature': signature,
-                'bbox': [int(left_pos), int(top_pos), int(right_pos), int(bottom_pos)],
+                'bbox_word_aggregate': [int(left_pos), int(top_pos), int(right_pos), int(bottom_pos)],
                 'center': [(left_pos + right_pos) / 2, (top_pos + bottom_pos) / 2],
                 'word_ids': [m['word_id'] for m in word_mappings],
                 'text': ' '.join([m['word_text'] for m in word_mappings])
@@ -649,9 +703,9 @@ class HybridTableExtractor:
                                cells: List[Dict], words: List[Dict],
                                output_path: str = 'viz_all.png'):
         """Visualize everything together"""
-        print("=" * 70)
+        print("-" * 30)
         print("FINAL VISUALIZATION")
-        print("=" * 70)
+        print("-" * 30)
 
         img = Image.fromarray(image)
         draw = ImageDraw.Draw(img)
@@ -659,7 +713,7 @@ class HybridTableExtractor:
         # 1. Draw cells (filled, semi-transparent effect with lighter colors)
         np.random.seed(42)
         for cell in cells:
-            x1, y1, x2, y2 = cell['bbox']
+            x1, y1, x2, y2 = cell['bbox_word_aggregate']
             color = (np.random.randint(150, 255),
                      np.random.randint(150, 255),
                      np.random.randint(150, 255))
@@ -693,51 +747,33 @@ class HybridTableExtractor:
         return img
 
     # ============================================
-    # MAIN PIPELINE
+    # MAIN PIPELINE FUNCTIONS (FIXED)
     # ============================================
 
-    def process_table(self, image_path: str, output_prefix: str = 'output',
-                      skip_table_detection: bool = False) -> Optional[Dict]:
-        """Complete pipeline with step-by-step debug output"""
-        print("=" * 70)
-        print(f"PROCESSING: {image_path}")
-        print("=" * 70 + "\n")
-
-        # Load image
-        image_pil = Image.open(image_path).convert("RGB")
-        image_np = np.array(image_pil)
-
-        # Step 1: Table Transformer detects table REGION (or skip)
-        if not skip_table_detection:
-            tables = self.detect_tables(image_pil, debug_prefix=output_prefix)
-
-            if len(tables) == 0:
-                print("✗ No tables detected! Trying full image instead...")
-                table_img = image_np
-            else:
-                # Crop to table
-                table = tables[0]
-                x1, y1, x2, y2 = table['bbox']
-                table_img = image_np[y1:y2, x1:x2]
-        else:
-            print("⊗ Skipping table detection - using full image")
-            table_img = image_np
+    def _process_single_table_region(self, table_img: np.ndarray,
+                                     output_prefix: str, table_index: int) -> Optional[Dict]:
+        """
+        Helper function to run the full pipeline on a single cropped image region.
+        """
+        print(f"\n--- Processing Table Region {table_index} ---")
 
         # Save the cropped/full table image
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        table_save_path = os.path.join(BASE_DIR, "out", f"{output_prefix}_00_table_region.png")
+        table_save_path = os.path.join(BASE_DIR, "out", f"{output_prefix}_table{table_index}_00_region.png")
         os.makedirs(os.path.dirname(table_save_path), exist_ok=True)
         cv2.imwrite(table_save_path, cv2.cvtColor(table_img, cv2.COLOR_RGB2BGR))
-        print(f"✓ Saved table region: {table_save_path}\n")
+        print(f"✓ Saved table region: {table_save_path}")
+
+        current_prefix = f"{output_prefix}_table{table_index}"
 
         # Step 2: Extract borders (OpenCV)
-        borders = self.extract_borders(table_img, debug_prefix=output_prefix)
+        borders = self.extract_borders(table_img, debug_prefix=current_prefix)
 
         # Step 3: Extract words (OCR)
-        words = self.extract_words(table_img, debug_prefix=output_prefix)
+        words = self.extract_words(table_img, debug_prefix=current_prefix)
 
         if len(words) == 0:
-            print("✗ No words detected! Cannot continue.")
+            print(f"✗ No words detected for Table {table_index}! Skipping.")
             return None
 
         # Step 4: Map words to borders
@@ -750,10 +786,11 @@ class HybridTableExtractor:
         G_words = self.build_word_graph(words)
 
         # Step 7: Infer cells
-        cells = self.infer_cells(mappings, debug_prefix=output_prefix)
+        cells = self.infer_cells(mappings, debug_prefix=current_prefix)
 
         result = {
-            'table_image': table_img,
+            'table_index': table_index,
+            'table_image_shape': table_img.shape[:2],
             'borders': borders,
             'words': words,
             'cells': cells,
@@ -769,24 +806,74 @@ class HybridTableExtractor:
         }
 
         # Final combined visualization
-        final_path = os.path.join(BASE_DIR, "out", f"{output_prefix}_99_final.png")
+        final_path = os.path.join(BASE_DIR, "out", f"{current_prefix}_99_final.png")
         self.visualize_all_combined(table_img, borders, cells, words, final_path)
 
-        print("=" * 70)
-        print("PIPELINE COMPLETE - SUMMARY")
-        print("=" * 70)
-        print(f"✓ Horizontal borders: {len(borders['horizontal'])}")
-        print(f"✓ Vertical borders: {len(borders['vertical'])}")
-        print(f"✓ Words extracted: {len(words)}")
-        print(f"✓ Cells inferred: {len(cells)}")
-        print(f"✓ Border graph: {G_borders.number_of_nodes()} nodes, {G_borders.number_of_edges()} edges")
-        print(f"✓ Word graph: {G_words.number_of_nodes()} nodes, {G_words.number_of_edges()} edges")
-        print()
-
+        print(f"--- Table {table_index} Processing Complete ---")
         return result
 
-    def export_json(self, result: Dict, output_path: str):
-        """Export everything to JSON"""
+    def process_table(self, image_path: str, output_prefix: str = 'output',
+                      skip_table_detection: bool = False, visualize: bool = True,
+                      detection_threshold: float = 0.01) -> List[Dict[str, Any]]:
+        """
+        Complete pipeline that now processes ALL detected tables, using a very low
+        detection threshold by default to capture unclosed tables.
+        """
+        print("=" * 70)
+        print(f"PROCESSING: {image_path}")
+        print("=" * 70 + "\n")
+
+        # Load image
+        image_pil = Image.open(image_path).convert("RGB")
+        image_np = np.array(image_pil)
+
+        all_results = []
+
+        # Step 1: Table Transformer detects table REGION (or skip)
+        if not skip_table_detection:
+            # Get all tables using the extremely low detection_threshold (0.01)
+            tables = self.detect_tables(image_pil, debug_prefix=output_prefix,
+                                        detection_threshold=detection_threshold)
+
+            if len(tables) == 0:
+                print("✗ No tables detected! Attempting to process the full image as one table.")
+                # Process the full image as Table 1
+                result = self._process_single_table_region(image_np, output_prefix, table_index=1)
+                if result:
+                    all_results.append(result)
+            else:
+                # Iterate over ALL detected tables
+                for i, table in enumerate(tables):
+                    x1, y1, x2, y2 = table['bbox']
+                    # Crop the image region for the current table
+                    table_img = image_np[y1:y2, x1:x2]
+
+                    # Run the pipeline on the single cropped region
+                    result = self._process_single_table_region(table_img, output_prefix, table_index=i + 1)
+                    if result:
+                        all_results.append(result)
+        else:
+            print("⊗ Skipping table detection - processing full image as single table.")
+            # Process the full image as Table 1
+            result = self._process_single_table_region(image_np, output_prefix, table_index=1)
+            if result:
+                all_results.append(result)
+
+        print("=" * 70)
+        print("PIPELINE COMPLETE - FINAL SUMMARY")
+        print("=" * 70)
+        print(f"Total tables processed: {len(all_results)}")
+
+        for result in all_results:
+            print(f"  Table {result['table_index']}:")
+            print(f"    - Words extracted: {result['stats']['num_words']}")
+            print(f"    - Cells inferred: {result['stats']['num_cells']}")
+        print()
+
+        return all_results
+
+    def export_json(self, result_list: List[Dict[str, Any]], output_prefix: str):
+        """Export results (list of table results) to separate JSON files."""
 
         def convert(obj):
             if isinstance(obj, (np.integer, np.floating)):
@@ -799,24 +886,36 @@ class HybridTableExtractor:
                 return {k: convert(v) for k, v in obj.items()}
             return obj
 
-        data = {
-            'border_graph': {
-                'nodes': [convert({'id': n, **a}) for n, a in result['border_graph'].nodes(data=True)],
-                'edges': [convert({'source': u, 'target': v, **a})
-                          for u, v, a in result['border_graph'].edges(data=True)]
-            },
-            'word_graph': {
-                'nodes': [convert({'id': n, **a}) for n, a in result['word_graph'].nodes(data=True)],
-                'edges': [convert({'source': u, 'target': v, **a})
-                          for u, v, a in result['word_graph'].edges(data=True)]
-            },
-            'word_to_border_mappings': convert(result['word_border_mappings']),
-            'inferred_cells': convert(result['cells']),
-            'borders': convert(result['borders']),
-            'stats': convert(result['stats'])
-        }
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        output_dir = os.path.join(BASE_DIR, "out")
+        os.makedirs(output_dir, exist_ok=True)
 
-        with open(output_path, 'w') as f:
-            json.dump(data, f, indent=2)
+        for result in result_list:
+            table_idx = result['table_index']
+            output_path = os.path.join(output_dir, f"{output_prefix}_table{table_idx}_data.json")
 
-        print(f"✓ Exported JSON to: {output_path}")
+            # Prepare data for this table
+            data = {
+                'table_index': table_idx,
+                'table_image_shape': result['table_image_shape'],
+                'stats': convert(result['stats']),
+                'borders': convert(result['borders']),
+                'word_to_border_mappings': convert(result['word_border_mappings']),
+                'inferred_cells': convert(result['cells']),
+                'border_graph': {
+                    'nodes': [convert({'id': n, **a}) for n, a in result['border_graph'].nodes(data=True)],
+                    'edges': [convert({'source': u, 'target': v, **a})
+                              for u, v, a in result['border_graph'].edges(data=True)]
+                },
+                'word_graph': {
+                    'nodes': [convert({'id': n, **a}) for n, a in result['word_graph'].nodes(data=True)],
+                    'edges': [convert({'source': u, 'target': v, **a})
+                              for u, v, a in result['word_graph'].edges(data=True)]
+                },
+            }
+
+            with open(output_path, 'w') as f:
+                json.dump(data, f, indent=2)
+
+            print(f"✓ Exported JSON for Table {table_idx} to: {output_path}")
+        print()

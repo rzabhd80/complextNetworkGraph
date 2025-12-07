@@ -1,6 +1,7 @@
 import os
 
-from table_extractor_transformer import HybridTableExtractor
+from table_extractor.table_extractor_transformer import HybridTableExtractor
+from table_extractor.table_extractor_yolo import YOLOTableExtractor
 
 if __name__ == "__main__":
     extractor = HybridTableExtractor(use_fp16=True)
@@ -24,3 +25,22 @@ if __name__ == "__main__":
         print("📊 output_all.png      - ALL components combined")
         print("📄 output.json         - Full data export")
         print("=" * 70)
+
+        # Initialize with YOLO model (choose based on your needs)
+        #extractor = YOLOTableExtractor(yolo_model='yolov8l.pt')  # Most accurate
+        # extractor = YOLOTableExtractor(yolo_model='yolov8n.pt')  # Fastest
+
+        # Process image
+        #result = extractor.process_table(
+        #    'bank_statement.jpg',
+        #    output_prefix='yolo_output',
+        #    confidence_threshold=0.25,  # Lower = detect more
+        #    skip_table_detection=False,  # Set True to use full image
+        #    use_largest_table=True
+        #)
+
+        #if result:
+            # Export to JSON
+        #    extractor.export_json(result, 'yolo_output.json')
+
+         #   print("\n🎉 Processing complete! Check the 'out/' folder for visualizations.")
