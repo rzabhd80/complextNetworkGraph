@@ -270,9 +270,22 @@ class HybridTableExtractor:
         words = []
         word_id = 0
 
-        if result and result[0]:
-            for line in result[0]:
-                bbox, (text, confidence) = line  # unpack list structure
+        if result and len(result) > 0:
+            for line in result[0]:  # result[0] = first page
+                # Safe unpacking: bbox is first element, text/conf is second element
+                if not isinstance(line, (list, tuple)) or len(line) < 2:
+                    continue  # skip malformed entries
+
+                bbox = line[0]
+                # Handle different formats for text/conf
+                text_conf = line[1]
+                if isinstance(text_conf, (list, tuple)) and len(text_conf) == 2:
+                    text, confidence = text_conf
+                elif isinstance(text_conf, str):
+                    text, confidence = text_conf, 1.0  # fallback confidence
+                else:
+                    continue  # skip unknown format
+
                 x_coords = [point[0] for point in bbox]
                 y_coords = [point[1] for point in bbox]
                 x1, y1 = min(x_coords), min(y_coords)
