@@ -262,7 +262,6 @@ class HybridTableExtractor:
         return merged
 
     def extract_words(self, image: np.ndarray) -> List[Dict]:
-        """STEP 3: Extract words with OCR"""
         self._load_ocr()
 
         print("3. Extracting words with OCR...")
@@ -273,10 +272,7 @@ class HybridTableExtractor:
 
         if result and result[0]:
             for line in result[0]:
-                bbox = line[0]
-                text = line[1][0]
-                confidence = line[1][1]
-
+                bbox, (text, confidence) = line  # unpack list structure
                 x_coords = [point[0] for point in bbox]
                 y_coords = [point[1] for point in bbox]
                 x1, y1 = min(x_coords), min(y_coords)
