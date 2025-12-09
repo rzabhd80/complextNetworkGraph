@@ -8,23 +8,23 @@ CRITICAL FIXES:
 3. OCR parameters tuned for better detection
 4. Coordinate spaces properly documented
 """
-import os
 
-import torch
-import numpy as np
+import gc
+import json
+import os
+import warnings
+from collections import defaultdict
+from typing import Any, Dict, List, Optional, Tuple
+
 import cv2
 import networkx as nx
+import numpy as np
+import torch
+from paddleocr import PaddleOCR
 from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoModelForObjectDetection, DetrImageProcessor
-from paddleocr import PaddleOCR
-from transformers import DetrImageProcessor
-from typing import List, Dict, Tuple, Optional, Any
-import json
-from collections import defaultdict
-import gc
-import warnings
 
-warnings.filterwarnings('ignore')
+warnings.filterwarnings("ignore")
 
 
 class HybridTableExtractor:
@@ -65,8 +65,7 @@ class HybridTableExtractor:
             self.processor = DetrImageProcessor()
 
             self.detection_model = AutoModelForObjectDetection.from_pretrained(
-                "microsoft/table-transformer-detection",
-                revision="no_timm"
+                "microsoft/table-transformer-detection", revision="no_timm"
             )
 
             if self.use_fp16:
@@ -96,15 +95,40 @@ class HybridTableExtractor:
             # Valid parameters only - removed invalid ones
             self.ocr = PaddleOCR(
                 use_angle_cls=True,
-                lang='en',
+                lang="en",
                 det_db_thresh=0.3,  # Lower threshold for text detection (default 0.3)
                 det_db_box_thresh=0.5,  # Box threshold (default 0.6)
                 rec_batch_num=6,  # Batch size for recognition
             )
             print("✓ OCR loaded with enhanced detection parameters\n")
 
-    def detect_tables(self, image: Image.Image, debug_prefix: str = 'debug',
-                      detection_threshold: float = 0.5) -> List[Dict]:
+    def _translate_coords_to_original(
+        self, local_coords: List[int], offset_x: int, offset_y: int
+    ) -> List[int]:
+        """
+        Convert [x1, y1, x2, y2] from cropped table space → original image space
+        """
+        if len(local_coords) != 4:
+            return local_coords  # safety
+        x1, y1, x2, y2 = local_coords
+        return [
+            int(x1 + offset_x),
+            int(y1 + offset_y),
+            int(x2 + offset_x),
+            int(y2 + offset_y),
+        ]
+
+    def _translate_point_to_original(
+        self, point: Tuple[float, float], offset_x: int, offset_y: int
+    ) -> Tuple[float, float]:
+        return (point[0] + offset_x, point[1] + offset_y)
+
+    def detect_tables(
+        self,
+        image: Image.Image,
+        debug_prefix: str = "debug",
+        detection_threshold: float = 0.5,
+    ) -> List[Dict]:
         """
         STEP 1: Use Table Transformer to detect table REGIONS
         NOW RETURNS FULL TABLE DATA IMMEDIATELY
@@ -135,7 +159,9 @@ class HybridTableExtractor:
 
         # Extract table regions
         tables = []
-        for score, label, box in zip(results["scores"], results["labels"], results["boxes"]):
+        for score, label, box in zip(
+            results["scores"], results["labels"], results["boxes"]
+        ):
             if label.item() == 0:  # Table class
                 # Increase padding for better context in cropping
                 x1, y1, x2, y2 = [int(i) for i in box.tolist()]
@@ -149,21 +175,25 @@ class HybridTableExtractor:
                 x2 = min(width, x2 + buffer)
                 y2 = min(height, y2 + buffer)
 
-                tables.append({
-                    'bbox': [x1, y1, x2, y2],
-                    'confidence': score.item(),
-                    'detection_method': 'table_transformer',
-                    'width': x2 - x1,
-                    'height': y2 - y1,
-                    'area': (x2 - x1) * (y2 - y1)
-                })
+                tables.append(
+                    {
+                        "bbox": [x1, y1, x2, y2],
+                        "confidence": score.item(),
+                        "detection_method": "table_transformer",
+                        "width": x2 - x1,
+                        "height": y2 - y1,
+                        "area": (x2 - x1) * (y2 - y1),
+                    }
+                )
 
         # Sort by area (largest first)
-        tables.sort(key=lambda t: t['area'], reverse=True)
+        tables.sort(key=lambda t: t["area"], reverse=True)
 
         # SAVE DETECTION VISUALIZATION
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        debug_path = os.path.join(BASE_DIR, "out", f"{debug_prefix}_01_table_detection.png")
+        debug_path = os.path.join(
+            BASE_DIR, "out", f"{debug_prefix}_01_table_detection.png"
+        )
         os.makedirs(os.path.dirname(debug_path), exist_ok=True)
 
         debug_img = image.copy()
@@ -172,11 +202,14 @@ class HybridTableExtractor:
         colors = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
 
         for i, table in enumerate(tables):
-            x1, y1, x2, y2 = table['bbox']
+            x1, y1, x2, y2 = table["bbox"]
             color = colors[i % len(colors)]
             draw.rectangle([x1, y1, x2, y2], outline=color, width=5)
-            draw.text((x1, y1 - 20), f"Table {i + 1} (conf:{table['confidence']:.2f})",
-                      fill=color)
+            draw.text(
+                (x1, y1 - 20),
+                f"Table {i + 1} (conf:{table['confidence']:.2f})",
+                fill=color,
+            )
         debug_img.save(debug_path)
         print(f"✓ Saved detection visualization: {debug_path}")
         print(f"✓ Found {len(tables)} table(s) at threshold {detection_threshold}")
@@ -198,8 +231,9 @@ class HybridTableExtractor:
         print()
         return tables
 
-    def extract_borders(self, image: np.ndarray, min_length: int = 30,
-                        debug_prefix: str = 'debug') -> Dict:
+    def extract_borders(
+        self, image: np.ndarray, min_length: int = 30, debug_prefix: str = "debug"
+    ) -> Dict:
         """
         STEP 2: Extract borders/lines using OpenCV
         Works with ANY color (red, blue, green, black, etc.)
@@ -219,7 +253,9 @@ class HybridTableExtractor:
 
         # SAVE EDGE DETECTION OUTPUT
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        edges_path = os.path.join(BASE_DIR, "out", f"{debug_prefix}_02a_edges_dilated.png")
+        edges_path = os.path.join(
+            BASE_DIR, "out", f"{debug_prefix}_02a_edges_dilated.png"
+        )
         cv2.imwrite(edges_path, edges)
         print(f"✓ Saved edge detection (with dilation): {edges_path}")
 
@@ -230,7 +266,7 @@ class HybridTableExtractor:
             theta=np.pi / 180,
             threshold=50,
             minLineLength=min_length,
-            maxLineGap=10
+            maxLineGap=10,
         )
 
         horizontal_lines = []
@@ -242,7 +278,7 @@ class HybridTableExtractor:
 
                 dx = x2 - x1
                 dy = y2 - y1
-                length = np.sqrt(dx ** 2 + dy ** 2)
+                length = np.sqrt(dx**2 + dy**2)
 
                 if length < min_length:
                     continue
@@ -253,50 +289,54 @@ class HybridTableExtractor:
                 # Classify as horizontal or vertical
                 if angle < 10 or angle > 170:  # Horizontal
                     y_avg = (y1 + y2) / 2
-                    horizontal_lines.append({
-                        'line_id': f"h_line_{len(horizontal_lines)}",
-                        'type': 'horizontal',
-                        'position': y_avg,
-                        'start': min(x1, x2),
-                        'end': max(x1, x2),
-                        'endpoints': [(x1, y1), (x2, y2)],
-                        'length': length
-                    })
+                    horizontal_lines.append(
+                        {
+                            "line_id": f"h_line_{len(horizontal_lines)}",
+                            "type": "horizontal",
+                            "position": y_avg,
+                            "start": min(x1, x2),
+                            "end": max(x1, x2),
+                            "endpoints": [(x1, y1), (x2, y2)],
+                            "length": length,
+                        }
+                    )
 
                 elif 80 < angle < 100:  # Vertical
                     x_avg = (x1 + x2) / 2
-                    vertical_lines.append({
-                        'line_id': f"v_line_{len(vertical_lines)}",
-                        'type': 'vertical',
-                        'position': x_avg,
-                        'start': min(y1, y2),
-                        'end': max(y1, y2),
-                        'endpoints': [(x1, y1), (x2, y2)],
-                        'length': length
-                    })
+                    vertical_lines.append(
+                        {
+                            "line_id": f"v_line_{len(vertical_lines)}",
+                            "type": "vertical",
+                            "position": x_avg,
+                            "start": min(y1, y2),
+                            "end": max(y1, y2),
+                            "endpoints": [(x1, y1), (x2, y2)],
+                            "length": length,
+                        }
+                    )
 
         # Merge nearby parallel lines
         horizontal_lines = self._merge_parallel_lines(horizontal_lines, tolerance=10)
         vertical_lines = self._merge_parallel_lines(vertical_lines, tolerance=10)
 
         # Sort by position
-        horizontal_lines.sort(key=lambda l: l['position'])
-        vertical_lines.sort(key=lambda l: l['position'])
+        horizontal_lines.sort(key=lambda l: l["position"])
+        vertical_lines.sort(key=lambda l: l["position"])
 
         # SAVE BORDER VISUALIZATION
         border_vis = Image.fromarray(image)
         draw = ImageDraw.Draw(border_vis)
 
         for h_line in horizontal_lines:
-            y = int(h_line['position'])
-            x1 = int(h_line['start'])
-            x2 = int(h_line['end'])
+            y = int(h_line["position"])
+            x1 = int(h_line["start"])
+            x2 = int(h_line["end"])
             draw.line([(x1, y), (x2, y)], fill=(255, 0, 0), width=3)
 
         for v_line in vertical_lines:
-            x = int(v_line['position'])
-            y1 = int(v_line['start'])
-            y2 = int(v_line['end'])
+            x = int(v_line["position"])
+            y1 = int(v_line["start"])
+            y2 = int(v_line["end"])
             draw.line([(x, y1), (x, y2)], fill=(0, 0, 255), width=3)
 
         border_path = os.path.join(BASE_DIR, "out", f"{debug_prefix}_02b_borders.png")
@@ -307,17 +347,16 @@ class HybridTableExtractor:
         print(f"✓ Found {len(vertical_lines)} vertical borders")
         print()
 
-        return {
-            'horizontal': horizontal_lines,
-            'vertical': vertical_lines
-        }
+        return {"horizontal": horizontal_lines, "vertical": vertical_lines}
 
-    def _merge_parallel_lines(self, lines: List[Dict], tolerance: int = 10) -> List[Dict]:
+    def _merge_parallel_lines(
+        self, lines: List[Dict], tolerance: int = 10
+    ) -> List[Dict]:
         """Merge lines that are close and parallel"""
         if len(lines) == 0:
             return []
 
-        lines.sort(key=lambda l: l['position'])
+        lines.sort(key=lambda l: l["position"])
 
         merged = []
         used = [False] * len(lines)
@@ -331,28 +370,32 @@ class HybridTableExtractor:
 
             for j in range(i + 1, len(lines)):
                 line2 = lines[j]
-                if abs(line1['position'] - line2['position']) < tolerance:
+                if abs(line1["position"] - line2["position"]) < tolerance:
                     group.append(line2)
                     used[j] = True
-                elif line2['position'] - line1['position'] > tolerance:
+                elif line2["position"] - line1["position"] > tolerance:
                     break
 
-            avg_position = np.mean([l['position'] for l in group])
-            min_start = min([l['start'] for l in group])
-            max_end = max([l['end'] for l in group])
+            avg_position = np.mean([l["position"] for l in group])
+            min_start = min([l["start"] for l in group])
+            max_end = max([l["end"] for l in group])
 
-            merged.append({
-                'line_id': f"{line1['type']}_merged_{len(merged)}",
-                'type': line1['type'],
-                'position': avg_position,
-                'start': min_start,
-                'end': max_end,
-                'length': max_end - min_start
-            })
+            merged.append(
+                {
+                    "line_id": f"{line1['type']}_merged_{len(merged)}",
+                    "type": line1["type"],
+                    "position": avg_position,
+                    "start": min_start,
+                    "end": max_end,
+                    "length": max_end - min_start,
+                }
+            )
 
         return merged
 
-    def extract_words(self, image: np.ndarray, debug_prefix: str = 'debug') -> List[Dict]:
+    def extract_words(
+        self, image: np.ndarray, debug_prefix: str = "debug"
+    ) -> List[Dict]:
         """
         STEP 3: Extract words with OCR + EXTENSIVE DEBUGGING
         """
@@ -372,7 +415,9 @@ class HybridTableExtractor:
 
         # Check if image is too small
         if image.shape[0] < 20 or image.shape[1] < 20:
-            print(f"⚠️  WARNING: Image too small ({image.shape[1]}x{image.shape[0]})! OCR may fail.")
+            print(
+                f"⚠️  WARNING: Image too small ({image.shape[1]}x{image.shape[0]})! OCR may fail."
+            )
 
         # Try OCR
         print("🔍 Running OCR...")
@@ -404,11 +449,19 @@ class HybridTableExtractor:
             print(f"\n📦 result[0] is a DICT with keys: {list(result[0].keys())}")
             for key, value in result[0].items():
                 val_type = type(value)
-                val_len = len(value) if hasattr(value, '__len__') and not isinstance(value,
-                                                                                     (str, int, float)) else 'N/A'
+                val_len = (
+                    len(value)
+                    if hasattr(value, "__len__")
+                    and not isinstance(value, (str, int, float))
+                    else "N/A"
+                )
                 print(f"   '{key}': type={val_type}, len={val_len}")
                 # Only show first item if it's a list/tuple
-                if isinstance(value, (list, tuple)) and len(value) > 0 and len(value) < 100:
+                if (
+                    isinstance(value, (list, tuple))
+                    and len(value) > 0
+                    and len(value) < 100
+                ):
                     try:
                         print(f"      First item: {value[0]}")
                     except:
@@ -432,10 +485,10 @@ class HybridTableExtractor:
             print("🔍 Detected DICT format - searching for detections...")
             # Try common keys in order of priority
             possible_keys = [
-                ('rec_texts', 'rec_polys', 'rec_scores'),  # New PaddleX format
-                ('rec_texts', 'rec_boxes', 'rec_scores'),  # Alternative box format
-                ('rec_res', None, None),  # Legacy format
-                ('dt_polys', None, None),  # Detection only
+                ("rec_texts", "rec_polys", "rec_scores"),  # New PaddleX format
+                ("rec_texts", "rec_boxes", "rec_scores"),  # Alternative box format
+                ("rec_res", None, None),  # Legacy format
+                ("dt_polys", None, None),  # Detection only
             ]
 
             detections = None
@@ -448,11 +501,15 @@ class HybridTableExtractor:
             print(f"   Available keys: {dict_keys}")
 
             # New PaddleX format with separate arrays
-            if 'rec_texts' in result[0]:
+            if "rec_texts" in result[0]:
                 print("   ✓ Found 'rec_texts' key - using PaddleX format")
-                texts = result[0]['rec_texts']
-                boxes = result[0].get('rec_polys') or result[0].get('rec_boxes') or result[0].get('dt_polys')
-                scores = result[0].get('rec_scores', [1.0] * len(texts))
+                texts = result[0]["rec_texts"]
+                boxes = (
+                    result[0].get("rec_polys")
+                    or result[0].get("rec_boxes")
+                    or result[0].get("dt_polys")
+                )
+                scores = result[0].get("rec_scores", [1.0] * len(texts))
 
                 if boxes is None:
                     print("   ✗ No bounding boxes found!")
@@ -462,14 +519,19 @@ class HybridTableExtractor:
                 detections = []
                 for i in range(len(texts)):
                     if i < len(boxes):
-                        detections.append([boxes[i], (texts[i], scores[i] if i < len(scores) else 1.0)])
+                        detections.append(
+                            [
+                                boxes[i],
+                                (texts[i], scores[i] if i < len(scores) else 1.0),
+                            ]
+                        )
 
                 print(f"   ✓ Combined {len(detections)} text+box pairs")
 
             # Legacy format
-            elif 'rec_res' in result[0]:
+            elif "rec_res" in result[0]:
                 print("   ✓ Found 'rec_res' key")
-                detections = result[0]['rec_res']
+                detections = result[0]["rec_res"]
 
             if detections is None or len(detections) == 0:
                 print(f"   ✗ Could not extract detections from keys: {dict_keys}")
@@ -500,12 +562,14 @@ class HybridTableExtractor:
             try:
                 # Handle dict format (newer PaddleOCR)
                 if isinstance(line, dict):
-                    if 'text' in line and 'bbox' in line:
-                        text = line['text']
-                        bbox_points = line['bbox']
-                        confidence = line.get('score', 1.0)
+                    if "text" in line and "bbox" in line:
+                        text = line["text"]
+                        bbox_points = line["bbox"]
+                        confidence = line.get("score", 1.0)
                     else:
-                        print(f"  ⚠️  Detection {idx}: dict missing 'text' or 'bbox' keys: {line.keys()}")
+                        print(
+                            f"  ⚠️  Detection {idx}: dict missing 'text' or 'bbox' keys: {line.keys()}"
+                        )
                         continue
                 # Handle list/tuple format (older PaddleOCR)
                 elif isinstance(line, (list, tuple)) and len(line) >= 2:
@@ -517,15 +581,18 @@ class HybridTableExtractor:
                     elif isinstance(text_conf, str):
                         text, confidence = text_conf, 1.0
                     else:
-                        print(f"  ⚠️  Detection {idx}: unexpected text_conf format: {type(text_conf)}")
+                        print(
+                            f"  ⚠️  Detection {idx}: unexpected text_conf format: {type(text_conf)}"
+                        )
                         continue
                 else:
                     print(
-                        f"  ⚠️  Detection {idx}: unexpected format - type={type(line)}, len={len(line) if hasattr(line, '__len__') else 'N/A'}")
+                        f"  ⚠️  Detection {idx}: unexpected format - type={type(line)}, len={len(line) if hasattr(line, '__len__') else 'N/A'}"
+                    )
                     continue
 
                 # Skip empty text
-                if not text or (isinstance(text, str) and text.strip() == ''):
+                if not text or (isinstance(text, str) and text.strip() == ""):
                     print(f"  ⚠️  Detection {idx}: empty text, skipping")
                     continue
 
@@ -542,35 +609,41 @@ class HybridTableExtractor:
                         x1, y1 = min(x_coords), min(y_coords)
                         x2, y2 = max(x_coords), max(y_coords)
                     except (IndexError, TypeError) as e:
-                        print(f"  ⚠️  Detection {idx}: bbox coordinate extraction failed: {e}")
+                        print(
+                            f"  ⚠️  Detection {idx}: bbox coordinate extraction failed: {e}"
+                        )
                         continue
                 else:
                     print(f"  ⚠️  Detection {idx}: invalid bbox format: {bbox_points}")
                     continue
 
-                words.append({
-                    'word_id': f"word_{word_id}",
-                    'text': text,
-                    'bbox': [int(x1), int(y1), int(x2), int(y2)],
-                    'center': [(x1 + x2) / 2, (y1 + y2) / 2],
-                    'confidence': float(confidence)
-                })
+                words.append(
+                    {
+                        "word_id": f"word_{word_id}",
+                        "text": text,
+                        "bbox": [int(x1), int(y1), int(x2), int(y2)],
+                        "center": [(x1 + x2) / 2, (y1 + y2) / 2],
+                        "confidence": float(confidence),
+                    }
+                )
                 word_id += 1
 
             except Exception as e:
                 print(f"  ❌ Detection {idx} failed: {e}")
                 continue
 
-        print(f"\n✓ Successfully extracted {len(words)} words from {len(detections)} detections")
+        print(
+            f"\n✓ Successfully extracted {len(words)} words from {len(detections)} detections"
+        )
 
         # SAVE WORD VISUALIZATION
         word_vis = Image.fromarray(image)
         draw = ImageDraw.Draw(word_vis)
 
         for word in words:
-            x1, y1, x2, y2 = word['bbox']
+            x1, y1, x2, y2 = word["bbox"]
             draw.rectangle([x1, y1, x2, y2], outline=(0, 255, 0), width=2)
-            cx, cy = word['center']
+            cx, cy = word["center"]
             r = 3
             draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 0, 0))
 
@@ -598,63 +671,67 @@ class HybridTableExtractor:
         print("STEP 4: WORD-TO-BORDER MAPPING")
         print("-" * 30)
 
-        h_lines = borders['horizontal']
-        v_lines = borders['vertical']
+        h_lines = borders["horizontal"]
+        v_lines = borders["vertical"]
 
         mappings = []
 
         for word in words:
-            x1, y1, x2, y2 = word['bbox']
-            cx, cy = word['center']
+            x1, y1, x2, y2 = word["bbox"]
+            cx, cy = word["center"]
 
-            top_line = self._find_closest_line(cy, h_lines, 'above')
-            bottom_line = self._find_closest_line(cy, h_lines, 'below')
-            left_line = self._find_closest_line(cx, v_lines, 'left')
-            right_line = self._find_closest_line(cx, v_lines, 'right')
+            top_line = self._find_closest_line(cy, h_lines, "above")
+            bottom_line = self._find_closest_line(cy, h_lines, "below")
+            left_line = self._find_closest_line(cx, v_lines, "left")
+            right_line = self._find_closest_line(cx, v_lines, "right")
 
             mapping = {
-                'word_id': word['word_id'],
-                'word_text': word['text'],
-                'word_bbox': word['bbox'],
-                'word_center': word['center'],
-                'borders': {}
+                "word_id": word["word_id"],
+                "word_text": word["text"],
+                "word_bbox": word["bbox"],
+                "word_center": word["center"],
+                "borders": {},
             }
 
             if top_line:
-                mapping['borders']['top'] = {
-                    'line_id': top_line['line_id'],
-                    'position': top_line['position'],
-                    'distance': abs(cy - top_line['position'])
+                mapping["borders"]["top"] = {
+                    "line_id": top_line["line_id"],
+                    "position": top_line["position"],
+                    "distance": abs(cy - top_line["position"]),
                 }
 
             if bottom_line:
-                mapping['borders']['bottom'] = {
-                    'line_id': bottom_line['line_id'],
-                    'position': bottom_line['position'],
-                    'distance': abs(cy - bottom_line['position'])
+                mapping["borders"]["bottom"] = {
+                    "line_id": bottom_line["line_id"],
+                    "position": bottom_line["position"],
+                    "distance": abs(cy - bottom_line["position"]),
                 }
 
             if left_line:
-                mapping['borders']['left'] = {
-                    'line_id': left_line['line_id'],
-                    'position': left_line['position'],
-                    'distance': abs(cx - left_line['position'])
+                mapping["borders"]["left"] = {
+                    "line_id": left_line["line_id"],
+                    "position": left_line["position"],
+                    "distance": abs(cx - left_line["position"]),
                 }
 
             if right_line:
-                mapping['borders']['right'] = {
-                    'line_id': right_line['line_id'],
-                    'position': right_line['position'],
-                    'distance': abs(cx - right_line['position'])
+                mapping["borders"]["right"] = {
+                    "line_id": right_line["line_id"],
+                    "position": right_line["position"],
+                    "distance": abs(cx - right_line["position"]),
                 }
 
             if top_line and bottom_line and left_line and right_line:
-                mapping['cell_defined_by'] = tuple(sorted([
-                    top_line['line_id'],
-                    bottom_line['line_id'],
-                    left_line['line_id'],
-                    right_line['line_id']
-                ]))
+                mapping["cell_defined_by"] = tuple(
+                    sorted(
+                        [
+                            top_line["line_id"],
+                            bottom_line["line_id"],
+                            left_line["line_id"],
+                            right_line["line_id"],
+                        ]
+                    )
+                )
 
             mappings.append(mapping)
 
@@ -662,21 +739,22 @@ class HybridTableExtractor:
         print()
         return mappings
 
-    def _find_closest_line(self, position: float, lines: List[Dict],
-                           direction: str) -> Optional[Dict]:
+    def _find_closest_line(
+        self, position: float, lines: List[Dict], direction: str
+    ) -> Optional[Dict]:
         """Find closest line in a direction"""
         candidates = []
 
         for line in lines:
-            line_pos = line['position']
+            line_pos = line["position"]
 
-            if direction == 'above' and line_pos < position:
+            if direction == "above" and line_pos < position:
                 candidates.append((position - line_pos, line))
-            elif direction == 'below' and line_pos > position:
+            elif direction == "below" and line_pos > position:
                 candidates.append((line_pos - position, line))
-            elif direction == 'left' and line_pos < position:
+            elif direction == "left" and line_pos < position:
                 candidates.append((position - line_pos, line))
-            elif direction == 'right' and line_pos > position:
+            elif direction == "right" and line_pos > position:
                 candidates.append((line_pos - position, line))
 
         if candidates:
@@ -693,39 +771,43 @@ class HybridTableExtractor:
 
         G = nx.Graph()
 
-        h_lines = borders['horizontal']
-        v_lines = borders['vertical']
+        h_lines = borders["horizontal"]
+        v_lines = borders["vertical"]
 
         for line in h_lines + v_lines:
             G.add_node(
-                line['line_id'],
-                type=line['type'],
-                position=line['position'],
-                start=line['start'],
-                end=line['end'],
-                length=line['length'],
-                node_type='border'
+                line["line_id"],
+                type=line["type"],
+                position=line["position"],
+                start=line["start"],
+                end=line["end"],
+                length=line["length"],
+                node_type="border",
             )
 
         for h_line in h_lines:
             for v_line in v_lines:
-                h_y = h_line['position']
-                h_x_start, h_x_end = h_line['start'], h_line['end']
+                h_y = h_line["position"]
+                h_x_start, h_x_end = h_line["start"], h_line["end"]
 
-                v_x = v_line['position']
-                v_y_start, v_y_end = v_line['start'], v_line['end']
+                v_x = v_line["position"]
+                v_y_start, v_y_end = v_line["start"], v_line["end"]
 
                 tolerance = 2
-                if (h_x_start - tolerance <= v_x <= h_x_end + tolerance and
-                        v_y_start - tolerance <= h_y <= v_y_end + tolerance):
+                if (
+                    h_x_start - tolerance <= v_x <= h_x_end + tolerance
+                    and v_y_start - tolerance <= h_y <= v_y_end + tolerance
+                ):
                     G.add_edge(
-                        h_line['line_id'],
-                        v_line['line_id'],
+                        h_line["line_id"],
+                        v_line["line_id"],
                         intersection_point=(v_x, h_y),
-                        edge_type='intersection'
+                        edge_type="intersection",
                     )
 
-        print(f"✓ Border Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
+        print(
+            f"✓ Border Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges"
+        )
         print()
         return G
 
@@ -738,10 +820,7 @@ class HybridTableExtractor:
         G = nx.DiGraph()
 
         for word in words:
-            G.add_node(
-                word['word_id'],
-                text=word['text'],
-                bbox=word['bbox'])
+            G.add_node(word["word_id"], text=word["text"], bbox=word["bbox"])
             if len(words) == 0:
                 print("✗ No words to build graph from")
             return G
@@ -750,8 +829,8 @@ class HybridTableExtractor:
             print("✓ Word Graph: 1 node, 0 edges (single word)")
             return G
 
-        word_centers = np.array([w['center'] for w in words])
-        word_ids = [w['word_id'] for w in words]
+        word_centers = np.array([w["center"] for w in words])
+        word_ids = [w["word_id"] for w in words]
 
         for i, w1 in enumerate(words):
             if not word_ids or i >= len(word_centers):
@@ -764,7 +843,7 @@ class HybridTableExtractor:
             if actual_k == 0:
                 continue
 
-            k_indices = np.argpartition(distances, actual_k)[1:actual_k + 1]
+            k_indices = np.argpartition(distances, actual_k)[1 : actual_k + 1]
 
             for j_idx in k_indices:
                 if j_idx >= len(words):
@@ -773,24 +852,31 @@ class HybridTableExtractor:
                 w2 = words[j_idx]
                 dist = distances[j_idx]
 
-                dx = w2['center'][0] - w1['center'][0]
-                dy = w2['center'][1] - w1['center'][1]
+                dx = w2["center"][0] - w1["center"][0]
+                dy = w2["center"][1] - w1["center"][1]
 
                 if abs(dx) > abs(dy):
-                    direction = 'horizontal'
-                    edge_type = 'right' if dx > 0 else 'left'
+                    direction = "horizontal"
+                    edge_type = "right" if dx > 0 else "left"
                 else:
-                    direction = 'vertical'
-                    edge_type = 'down' if dy > 0 else 'up'
+                    direction = "vertical"
+                    edge_type = "down" if dy > 0 else "up"
 
-                G.add_edge(w1['word_id'], w2['word_id'],
-                           direction=direction, edge_type=edge_type, distance=dist)
+                G.add_edge(
+                    w1["word_id"],
+                    w2["word_id"],
+                    direction=direction,
+                    edge_type=edge_type,
+                    distance=dist,
+                )
 
         print(f"✓ Word Graph: {G.number_of_nodes()} nodes, {G.number_of_edges()} edges")
         print()
         return G
 
-    def infer_cells(self, mappings: List[Dict], borders: Dict, debug_prefix: str = 'debug') -> List[Dict]:
+    def infer_cells(
+        self, mappings: List[Dict], borders: Dict, debug_prefix: str = "debug"
+    ) -> List[Dict]:
         """
         STEP 7: Infer cells from word-border mappings
         NOW INCLUDES ACTUAL CELL BOUNDING BOX COORDINATES
@@ -803,8 +889,8 @@ class HybridTableExtractor:
 
         for mapping in mappings:
             # Only use words that are fully enclosed by 4 borders
-            if 'cell_defined_by' in mapping:
-                signature = mapping['cell_defined_by']
+            if "cell_defined_by" in mapping:
+                signature = mapping["cell_defined_by"]
                 cell_groups[signature].append(mapping)
 
         cells = []
@@ -813,62 +899,72 @@ class HybridTableExtractor:
             first_word = word_mappings[0]
 
             # Get actual border coordinates
-            top_border = first_word['borders'].get('top', {}).get('position')
-            bottom_border = first_word['borders'].get('bottom', {}).get('position')
-            left_border = first_word['borders'].get('left', {}).get('position')
-            right_border = first_word['borders'].get('right', {}).get('position')
+            top_border = first_word["borders"].get("top", {}).get("position")
+            bottom_border = first_word["borders"].get("bottom", {}).get("position")
+            left_border = first_word["borders"].get("left", {}).get("position")
+            right_border = first_word["borders"].get("right", {}).get("position")
 
             # Cell bbox defined by border positions
-            if all(b is not None for b in [top_border, bottom_border, left_border, right_border]):
+            if all(
+                b is not None
+                for b in [top_border, bottom_border, left_border, right_border]
+            ):
                 cell_bbox = [
                     int(left_border),
                     int(top_border),
                     int(right_border),
-                    int(bottom_border)
+                    int(bottom_border),
                 ]
             else:
                 # Fallback to word aggregate if borders incomplete
-                x1_coords = [m['word_bbox'][0] for m in word_mappings]
-                y1_coords = [m['word_bbox'][1] for m in word_mappings]
-                x2_coords = [m['word_bbox'][2] for m in word_mappings]
-                y2_coords = [m['word_bbox'][3] for m in word_mappings]
+                x1_coords = [m["word_bbox"][0] for m in word_mappings]
+                y1_coords = [m["word_bbox"][1] for m in word_mappings]
+                x2_coords = [m["word_bbox"][2] for m in word_mappings]
+                y2_coords = [m["word_bbox"][3] for m in word_mappings]
 
                 cell_bbox = [
                     int(min(x1_coords)),
                     int(min(y1_coords)),
                     int(max(x2_coords)),
-                    int(max(y2_coords))
+                    int(max(y2_coords)),
                 ]
 
             # Sort words based on reading order
-            word_mappings.sort(key=lambda m: (m['word_center'][1], m['word_center'][0]))
+            word_mappings.sort(key=lambda m: (m["word_center"][1], m["word_center"][0]))
 
-            cells.append({
-                'cell_id': f"cell_{cell_id}",
-                'border_signature': signature,
-                'cell_bbox': cell_bbox,
-                'cell_center': [
-                    (cell_bbox[0] + cell_bbox[2]) / 2,
-                    (cell_bbox[1] + cell_bbox[3]) / 2
-                ],
-                'border_positions': {
-                    'top': int(top_border) if top_border else None,
-                    'bottom': int(bottom_border) if bottom_border else None,
-                    'left': int(left_border) if left_border else None,
-                    'right': int(right_border) if right_border else None
-                },
-                'word_ids': [m['word_id'] for m in word_mappings],
-                'word_bboxes': [m['word_bbox'] for m in word_mappings],
-                'text': ' '.join([m['word_text'] for m in word_mappings])
-            })
+            cells.append(
+                {
+                    "cell_id": f"cell_{cell_id}",
+                    "border_signature": signature,
+                    "cell_bbox": cell_bbox,
+                    "cell_center": [
+                        (cell_bbox[0] + cell_bbox[2]) / 2,
+                        (cell_bbox[1] + cell_bbox[3]) / 2,
+                    ],
+                    "border_positions": {
+                        "top": int(top_border) if top_border else None,
+                        "bottom": int(bottom_border) if bottom_border else None,
+                        "left": int(left_border) if left_border else None,
+                        "right": int(right_border) if right_border else None,
+                    },
+                    "word_ids": [m["word_id"] for m in word_mappings],
+                    "word_bboxes": [m["word_bbox"] for m in word_mappings],
+                    "text": " ".join([m["word_text"] for m in word_mappings]),
+                }
+            )
 
         print(f"✓ Inferred {len(cells)} cells")
         print()
         return cells
 
-    def visualize_all_combined(self, image: np.ndarray, borders: Dict,
-                               cells: List[Dict], words: List[Dict],
-                               output_path: str = 'viz_all.png'):
+    def visualize_all_combined(
+        self,
+        image: np.ndarray,
+        borders: Dict,
+        cells: List[Dict],
+        words: List[Dict],
+        output_path: str = "viz_all.png",
+    ):
         """Visualize everything together"""
         print("-" * 30)
         print("FINAL VISUALIZATION")
@@ -880,31 +976,33 @@ class HybridTableExtractor:
         # 1. Draw cells
         np.random.seed(42)
         for cell in cells:
-            x1, y1, x2, y2 = cell['cell_bbox']
-            color = (np.random.randint(150, 255),
-                     np.random.randint(150, 255),
-                     np.random.randint(150, 255))
+            x1, y1, x2, y2 = cell["cell_bbox"]
+            color = (
+                np.random.randint(150, 255),
+                np.random.randint(150, 255),
+                np.random.randint(150, 255),
+            )
             draw.rectangle([x1, y1, x2, y2], outline=color, width=2)
 
         # 2. Draw borders
-        for h_line in borders['horizontal']:
-            y = int(h_line['position'])
-            x1 = int(h_line['start'])
-            x2 = int(h_line['end'])
+        for h_line in borders["horizontal"]:
+            y = int(h_line["position"])
+            x1 = int(h_line["start"])
+            x2 = int(h_line["end"])
             draw.line([(x1, y), (x2, y)], fill=(255, 0, 0), width=2)
 
-        for v_line in borders['vertical']:
-            x = int(v_line['position'])
-            y1 = int(v_line['start'])
-            y2 = int(v_line['end'])
+        for v_line in borders["vertical"]:
+            x = int(v_line["position"])
+            y1 = int(v_line["start"])
+            y2 = int(v_line["end"])
             draw.line([(x, y1), (x, y2)], fill=(0, 0, 255), width=2)
 
         # 3. Draw words
         for word in words:
-            x1, y1, x2, y2 = word['bbox']
+            x1, y1, x2, y2 = word["bbox"]
             draw.rectangle([x1, y1, x2, y2], outline=(0, 255, 0), width=1)
 
-            cx, cy = word['center']
+            cx, cy = word["center"]
             r = 2
             draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 0, 0))
 
@@ -913,15 +1011,24 @@ class HybridTableExtractor:
         print()
         return img
 
-    def _process_single_table_region(self, table_img: np.ndarray,
-                                     output_prefix: str, table_index: int,
-                                     table_offset_x: int = 0, table_offset_y: int = 0) -> Optional[Dict]:
+    def _process_single_table_region(
+        self,
+        table_img: np.ndarray,
+        output_prefix: str,
+        table_index: int,
+        table_offset_x: int = 0,
+        table_offset_y: int = 0,
+    ) -> Optional[Dict]:
         """Process a single table region"""
         print(f"\n--- Processing Table Region {table_index} ---")
-        print(f"   Table offset in original image: ({table_offset_x}, {table_offset_y})")
+        print(
+            f"   Table offset in original image: ({table_offset_x}, {table_offset_y})"
+        )
 
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-        table_save_path = os.path.join(BASE_DIR, "out", f"{output_prefix}_table{table_index}_00_region.png")
+        table_save_path = os.path.join(
+            BASE_DIR, "out", f"{output_prefix}_table{table_index}_00_region.png"
+        )
         os.makedirs(os.path.dirname(table_save_path), exist_ok=True)
         cv2.imwrite(table_save_path, cv2.cvtColor(table_img, cv2.COLOR_RGB2BGR))
         print(f"✓ Saved table region: {table_save_path}")
@@ -940,38 +1047,122 @@ class HybridTableExtractor:
         G_words = self.build_word_graph(words)
         cells = self.infer_cells(mappings, borders, debug_prefix=current_prefix)
 
-        result = {
-            'table_index': table_index,
-            'table_image_shape': table_img.shape[:2],
-            'coordinate_space': {
-                'description': 'All coordinates (borders, words, cells) are in CROPPED table space',
-                'origin': 'Top-left corner of cropped table region',
-                'table_offset_in_original_image': {'x': table_offset_x, 'y': table_offset_y},
-                'to_convert_to_original': 'Add table_offset x/y to all x,y coordinates'
-            },
-            'borders': borders,
-            'words': words,
-            'cells': cells,
-            'border_graph': G_borders,
-            'word_graph': G_words,
-            'word_border_mappings': mappings,
-            'stats': {
-                'num_h_lines': len(borders['horizontal']),
-                'num_v_lines': len(borders['vertical']),
-                'num_words': len(words),
-                'num_cells': len(cells)
-            }
+        # === COORDINATE NORMALIZATION TO ORIGINAL DOCUMENT SPACE ===
+        print(
+            f"🔄 Translating all coordinates to original document space (+{table_offset_x}, +{table_offset_y})"
+        )
+
+        # Translate words
+        for word in words:
+            word["bbox"] = self._translate_coords_to_original(
+                word["bbox"], table_offset_x, table_offset_y
+            )
+            word["center"] = self._translate_point_to_original(
+                word["center"], table_offset_x, table_offset_y
+            )
+
+        # Translate borders (positions are single values)
+        for h_line in borders["horizontal"]:
+            h_line["position"] += table_offset_y
+            h_line["start"] += table_offset_x
+            h_line["end"] += table_offset_x
+            # h_line['endpoints'] = [
+            #     (x + table_offset_x, y + table_offset_y) for x, y in h_line['endpoints']
+            # ]
+
+        for v_line in borders["vertical"]:
+            v_line["position"] += table_offset_x
+            v_line["start"] += table_offset_y
+            v_line["end"] += table_offset_y
+            # v_line['endpoints'] = [
+            #     (x + table_offset_x, y + table_offset_y) for x, y in v_line['endpoints']
+            # ]
+
+        # Translate word-border mappings
+        for mapping in mappings:
+            mapping["word_bbox"] = self._translate_coords_to_original(
+                mapping["word_bbox"], table_offset_x, table_offset_y
+            )
+            mapping["word_center"] = self._translate_point_to_original(
+                mapping["word_center"], table_offset_x, table_offset_y
+            )
+            # Update border references (positions already translated above)
+            for direction in ["top", "bottom"]:
+                if mapping["borders"].get(direction):
+                    mapping["borders"][direction]["position"] += table_offset_y
+            for direction in ["left", "right"]:
+                if mapping["borders"].get(direction):
+                    mapping["borders"][direction]["position"] += table_offset_x
+
+        # Translate cells
+        for cell in cells:
+            cell["cell_bbox"] = self._translate_coords_to_original(
+                cell["cell_bbox"], table_offset_x, table_offset_y
+            )
+            cell["cell_center"] = self._translate_point_to_original(
+                cell["cell_center"], table_offset_x, table_offset_y
+            )
+            # Update border positions in cell
+            bp = cell.get("border_positions", {})
+            if bp.get("top") is not None:
+                bp["top"] += table_offset_y
+            if bp.get("bottom") is not None:
+                bp["bottom"] += table_offset_y
+            if bp.get("left") is not None:
+                bp["left"] += table_offset_x
+            if bp.get("right") is not None:
+                bp["right"] += table_offset_x
+
+            cell["word_bboxes"] = [
+                self._translate_coords_to_original(bbox, table_offset_x, table_offset_y)
+                for bbox in cell["word_bboxes"]
+            ]
+
+        # Update coordinate_space info for clarity
+        coordinate_space = {
+            "description": "ALL coordinates are now in ORIGINAL DOCUMENT space",
+            "origin": "Top-left of the full input image",
+            "original_image_offset_applied": {"x": table_offset_x, "y": table_offset_y},
+            "note": "No further translation needed",
         }
 
+        result = {
+            "table_index": table_index,
+            "table_image_shape": table_img.shape[:2],
+            "coordinate_space": coordinate_space,
+            "detected_bbox": self._translate_coords_to_original(
+                [0, 0, table_img.shape[1], table_img.shape[0]],
+                table_offset_x,
+                table_offset_y,
+            ),  # bbox of table in original image
+            "detection_confidence": None,  # will be filled later
+            "borders": borders,
+            "words": words,
+            "cells": cells,
+            "border_graph": G_borders,
+            "word_graph": G_words,
+            "word_border_mappings": mappings,
+            "stats": {
+                "num_h_lines": len(borders["horizontal"]),
+                "num_v_lines": len(borders["vertical"]),
+                "num_words": len(words),
+                "num_cells": len(cells),
+            },
+        }
         final_path = os.path.join(BASE_DIR, "out", f"{current_prefix}_99_final.png")
         self.visualize_all_combined(table_img, borders, cells, words, final_path)
 
         print(f"--- Table {table_index} Processing Complete ---")
         return result
 
-    def process_table(self, image_path: str, output_prefix: str = 'output',
-                      skip_table_detection: bool = False, visualize: bool = True,
-                      detection_threshold: float = 0.03) -> List[Dict[str, Any]]:
+    def process_table(
+        self,
+        image_path: str,
+        output_prefix: str = "output",
+        skip_table_detection: bool = False,
+        visualize: bool = True,
+        detection_threshold: float = 0.03,
+    ) -> List[Dict[str, Any]]:
         """Complete pipeline"""
         print("=" * 70)
         print(f"PROCESSING: {image_path}")
@@ -983,13 +1174,20 @@ class HybridTableExtractor:
         all_results = []
 
         if not skip_table_detection:
-            tables = self.detect_tables(image_pil, debug_prefix=output_prefix,
-                                        detection_threshold=detection_threshold)
+            tables = self.detect_tables(
+                image_pil,
+                debug_prefix=output_prefix,
+                detection_threshold=detection_threshold,
+            )
 
             if len(tables) == 0:
                 print("✗ No tables detected! Processing full image as one table.")
                 result = self._process_single_table_region(
-                    image_np, output_prefix, table_index=1, table_offset_x=0, table_offset_y=0
+                    image_np,
+                    output_prefix,
+                    table_index=1,
+                    table_offset_x=0,
+                    table_offset_y=0,
                 )
                 if result:
                     all_results.append(result)
@@ -997,24 +1195,33 @@ class HybridTableExtractor:
                 for i, table in enumerate(tables):
                     print(f"\n{'=' * 70}")
                     print(f"PROCESSING TABLE {i + 1}/{len(tables)}")
-                    print(f"BBox: {table['bbox']}, Size: {table['width']}x{table['height']}")
+                    print(
+                        f"BBox: {table['bbox']}, Size: {table['width']}x{table['height']}"
+                    )
                     print(f"{'=' * 70}")
 
-                    x1, y1, x2, y2 = table['bbox']
+                    x1, y1, x2, y2 = table["bbox"]
                     table_img = image_np[y1:y2, x1:x2]
 
                     result = self._process_single_table_region(
-                        table_img, output_prefix, table_index=i + 1,
-                        table_offset_x=x1, table_offset_y=y1
+                        table_img,
+                        output_prefix,
+                        table_index=i + 1,
+                        table_offset_x=x1,
+                        table_offset_y=y1,
                     )
                     if result:
-                        result['detected_bbox'] = table['bbox']
-                        result['detection_confidence'] = table['confidence']
+                        result["detected_bbox"] = table["bbox"]
+                        result["detection_confidence"] = table["confidence"]
                         all_results.append(result)
         else:
             print("⊗ Skipping table detection - processing full image.")
             result = self._process_single_table_region(
-                image_np, output_prefix, table_index=1, table_offset_x=0, table_offset_y=0
+                image_np,
+                output_prefix,
+                table_index=1,
+                table_offset_x=0,
+                table_offset_y=0,
             )
             if result:
                 all_results.append(result)
@@ -1026,12 +1233,12 @@ class HybridTableExtractor:
 
         for result in all_results:
             print(f"  📊 Table {result['table_index']}:")
-            if 'detected_bbox' in result:
+            if "detected_bbox" in result:
                 print(f"     - Detection BBox: {result['detected_bbox']}")
                 print(f"     - Confidence: {result['detection_confidence']:.3f}")
             print(f"     - Words extracted: {result['stats']['num_words']}")
             print(f"     - Cells inferred: {result['stats']['num_cells']}")
-            if result['stats']['num_words'] == 0:
+            if result["stats"]["num_words"] == 0:
                 print(f"     ⚠️  NO WORDS - Check OCR input image!")
         print()
 
@@ -1056,32 +1263,44 @@ class HybridTableExtractor:
         os.makedirs(output_dir, exist_ok=True)
 
         for result in result_list:
-            table_idx = result['table_index']
-            output_path = os.path.join(output_dir, f"{output_prefix}_table{table_idx}_data.json")
+            table_idx = result["table_index"]
+            output_path = os.path.join(
+                output_dir, f"{output_prefix}_table{table_idx}_data.json"
+            )
 
             data = {
-                'table_index': table_idx,
-                'table_image_shape': result['table_image_shape'],
-                'coordinate_space': result['coordinate_space'],
-                'detected_bbox': result.get('detected_bbox'),
-                'detection_confidence': result.get('detection_confidence'),
-                'stats': convert(result['stats']),
-                'borders': convert(result['borders']),
-                'word_to_border_mappings': convert(result['word_border_mappings']),
-                'inferred_cells': convert(result['cells']),
-                'border_graph': {
-                    'nodes': [convert({'id': n, **a}) for n, a in result['border_graph'].nodes(data=True)],
-                    'edges': [convert({'source': u, 'target': v, **a})
-                              for u, v, a in result['border_graph'].edges(data=True)]
+                "table_index": table_idx,
+                "table_image_shape": result["table_image_shape"],
+                "coordinate_space": result["coordinate_space"],
+                "detected_bbox": result.get("detected_bbox"),
+                "detection_confidence": result.get("detection_confidence"),
+                "stats": convert(result["stats"]),
+                "borders": convert(result["borders"]),
+                "word_to_border_mappings": convert(result["word_border_mappings"]),
+                "inferred_cells": convert(result["cells"]),
+                "border_graph": {
+                    "nodes": [
+                        convert({"id": n, **a})
+                        for n, a in result["border_graph"].nodes(data=True)
+                    ],
+                    "edges": [
+                        convert({"source": u, "target": v, **a})
+                        for u, v, a in result["border_graph"].edges(data=True)
+                    ],
                 },
-                'word_graph': {
-                    'nodes': [convert({'id': n, **a}) for n, a in result['word_graph'].nodes(data=True)],
-                    'edges': [convert({'source': u, 'target': v, **a})
-                              for u, v, a in result['word_graph'].edges(data=True)]
+                "word_graph": {
+                    "nodes": [
+                        convert({"id": n, **a})
+                        for n, a in result["word_graph"].nodes(data=True)
+                    ],
+                    "edges": [
+                        convert({"source": u, "target": v, **a})
+                        for u, v, a in result["word_graph"].edges(data=True)
+                    ],
                 },
             }
 
-            with open(output_path, 'w') as f:
+            with open(output_path, "w") as f:
                 json.dump(data, f, indent=2)
 
             print(f"✓ Exported JSON for Table {table_idx} to: {output_path}")
