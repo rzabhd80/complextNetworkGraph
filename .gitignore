@@ -5,7 +5,7 @@ build/
 dist/
 wheels/
 *.egg-info
-
+table_extractor/out/
 # Virtual environments
 .venv
 yolov8l.pt
