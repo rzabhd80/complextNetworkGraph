@@ -3,6 +3,7 @@ name = "complextnetworkgraph"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "deskew>=1.5.3",
     "igraph>=1.0.0",
     "networkx==3.5",
     "numpy==2.3.3",
@@ -10,6 +11,7 @@ dependencies = [
     "paddlepaddle==3.2.0",
     "paddlex==3.2.1",
     "pillow==11.3.0",
+    "python-doctr>=1.0.0",
     "torch==2.5.1",
     "transformers==4.57.3",
     "typing>=3.10.0.0",

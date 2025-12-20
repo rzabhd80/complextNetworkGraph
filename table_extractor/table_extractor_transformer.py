@@ -11,18 +11,21 @@ CRITICAL FIXES:
 
 import gc
 import json
+import math
 import os
 import warnings
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import cv2
 import networkx as nx
 import numpy as np
 import torch
+from deskew import determine_skew
 from paddleocr import PaddleOCR
 from PIL import Image, ImageDraw, ImageFont
 from transformers import AutoModelForObjectDetection, DetrImageProcessor
+from ultralytics import YOLO
 
 warnings.filterwarnings("ignore")
 
@@ -38,7 +41,7 @@ class HybridTableExtractor:
     def __init__(self, use_fp16: bool = True):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.use_fp16 = use_fp16 and self.device == "cuda"
-
+        self.model = YOLO("yolo12x.pt")
         # Table Transformer for DETECTION only
         self.detection_model = None
         self.processor = None
@@ -1155,6 +1158,91 @@ class HybridTableExtractor:
         print(f"--- Table {table_index} Processing Complete ---")
         return result
 
+    def rotate(
+        self,
+        image: np.ndarray,
+        angle: float,
+        background: Union[int, Tuple[int, int, int]],
+    ) -> np.ndarray:
+        """Rotates an image and expands the canvas to prevent cropping corners."""
+        old_width, old_height = image.shape[:2]
+        angle_radian = math.radians(angle)
+
+        # Calculate new canvas dimensions
+        width = abs(np.sin(angle_radian) * old_height) + abs(
+            np.cos(angle_radian) * old_width
+        )
+        height = abs(np.sin(angle_radian) * old_width) + abs(
+            np.cos(angle_radian) * old_height
+        )
+
+        image_center = tuple(np.array(image.shape[1::-1]) / 2)
+        rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+
+        # Adjust translation to keep image centered in new canvas
+        rot_mat[1, 2] += (width - old_width) / 2
+        rot_mat[0, 2] += (height - old_height) / 2
+
+        return cv2.warpAffine(
+            image,
+            rot_mat,
+            (int(round(height)), int(round(width))),
+            borderValue=background,
+        )
+
+    def scan_with_fallback(self, img: np.ndarray):
+        """Processes an image array to find and crop the document."""
+        # 1. Try YOLO first (Pass the numpy array directly)
+        results = self.model(img)[0]
+
+        if len(results.boxes) > 0:
+            best_box = None
+            max_area = 0
+            for box_data in results.boxes:
+                box = box_data.xyxy[0].cpu().numpy().astype(int)
+                area = (box[2] - box[0]) * (box[3] - box[1])
+                if area > max_area:
+                    max_area = area
+                    best_box = box
+
+            if best_box is not None:
+                print("YOLO detected document.")
+                return img[best_box[1] : best_box[3], best_box[0] : best_box[2]]
+
+        # 2. Fallback: OpenCV Contour Detection
+        print("YOLO found nothing. Using OpenCV fallback...")
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        edged = cv2.Canny(blur, 75, 200)
+
+        cnts, _ = cv2.findContours(
+            edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
+        if cnts:
+            c = max(cnts, key=cv2.contourArea)
+            x, y, w, h = cv2.boundingRect(c)
+            return img[y : y + h, x : x + w]
+
+        return img
+
+    def pre_process(self, image_path):
+        print("Pre-processing image...")
+        image = cv2.imread(image_path)
+
+        if image is None:
+            print(f"Error: Could not find {image_path}")
+        else:
+            # A. Deskewing Phase
+            print("Deskewing image...")
+            grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            angle = determine_skew(grayscale)
+            rotated_img = self.rotate(image, angle, (0, 0, 0))
+
+            # B. Detection & Cropping Phase
+            print("Scanning for document...")
+            final_crop = self.scan_with_fallback(rotated_img)
+            return final_crop
+
     def process_table(
         self,
         image_path: str,
@@ -1167,9 +1255,11 @@ class HybridTableExtractor:
         print("=" * 70)
         print(f"PROCESSING: {image_path}")
         print("=" * 70 + "\n")
+        image_np = self.pre_process(image_path)
+        image_pil = Image.fromarray(image_np)
 
-        image_pil = Image.open(image_path).convert("RGB")
-        image_np = np.array(image_pil)
+        # image_pil = Image.open(image_path).convert("RGB")
+        # image_np = np.array(image_pil)
 
         all_results = []
 
