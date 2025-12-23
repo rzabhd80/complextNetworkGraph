@@ -12,6 +12,7 @@ dependencies = [
     "paddlex==3.2.1",
     "pillow==11.3.0",
     "python-doctr>=1.0.0",
+    "rich>=14.2.0",
     "torch==2.5.1",
     "transformers==4.57.3",
     "typing>=3.10.0.0",

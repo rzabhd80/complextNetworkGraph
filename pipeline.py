@@ -1,161 +1,222 @@
+from __future__ import annotations
+
+import contextlib
 import json
+import logging
 import math
 import os
-from typing import Tuple, Union
-import numpy as np
+import sys
+from dataclasses import asdict, dataclass
+
+# ----------------------------
+# JSON helpers
+# ----------------------------
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import cv2
-import torch
+import numpy as np
 from deskew import determine_skew
 from paddleocr import PaddleOCR
+from rich.console import Console
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 from ultralytics import YOLO
 
 from utils.get_dataset import get_datasets
 
-os.environ["QT_QPA_PLATFORM"] = "wayland;xcb"
-WIGHTS = "./weights/"
+
+@contextlib.contextmanager
+def suppress_output(enabled: bool = True):
+    """
+    Suppress BOTH stdout and stderr (works for Python prints and most native libs
+    that write to the process streams).
+    """
+    if not enabled:
+        yield
+        return
+
+    devnull = open(os.devnull, "w")
+    old_stdout_fd = os.dup(1)
+    old_stderr_fd = os.dup(2)
+
+    try:
+        os.dup2(devnull.fileno(), 1)
+        os.dup2(devnull.fileno(), 2)
+
+        # Also redirect Python-level sys.stdout/err
+        old_stdout, old_stderr = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = devnull, devnull
+
+        yield
+    finally:
+        # restore fds
+        os.dup2(old_stdout_fd, 1)
+        os.dup2(old_stderr_fd, 2)
+        os.close(old_stdout_fd)
+        os.close(old_stderr_fd)
+
+        # restore python streams
+        sys.stdout, sys.stderr = old_stdout, old_stderr
+        devnull.close()
+
+
+def silence_paddleocr_logs():
+    # Most PaddleOCR noise comes from these loggers
+    for name in ("ppocr", "paddleocr", "paddle", "PaddleOCR"):
+        logger = logging.getLogger(name)
+        logger.setLevel(logging.ERROR)
+        logger.propagate = False
+        logger.handlers.clear()
+
+    # Paddle / glog style env flags (helpful in many installs)
+    os.environ.setdefault("GLOG_minloglevel", "3")  # 0=INFO,1=WARNING,2=ERROR,3=FATAL
+    os.environ.setdefault("FLAGS_minlog_level", "3")
+    os.environ.setdefault("FLAGS_logtostderr", "1")
+
 
 def to_jsonable(obj):
-    """Recursively convert numpy/torch types + tuples to JSON-safe Python types."""
-    import numpy as np
+    """Recursively convert common non-JSON types to JSON-safe Python types."""
+    import torch
 
     if isinstance(obj, dict):
-        # JSON keys are strings; keep ints if you want, but converting is safer/cleaner
         return {str(k): to_jsonable(v) for k, v in obj.items()}
+
     if isinstance(obj, (list, tuple)):
         return [to_jsonable(x) for x in obj]
+
+    # ✅ pathlib
+    if isinstance(obj, Path):
+        return str(obj)
+
+    # ✅ numpy scalars/arrays
     if isinstance(obj, (np.integer,)):
         return int(obj)
     if isinstance(obj, (np.floating,)):
         return float(obj)
+    if isinstance(obj, (np.bool_,)):
+        return bool(obj)
     if isinstance(obj, np.ndarray):
         return obj.tolist()
-    if isinstance(obj, (torch.Tensor,)):
-        return to_jsonable(obj.detach().cpu().numpy())
+
+    # ✅ torch tensors
+    if "torch" in globals() or "torch" in locals():
+        if isinstance(obj, (torch.Tensor,)):
+            return to_jsonable(obj.detach().cpu().numpy())
+
     return obj
 
 
+# ----------------------------
+# Config
+# ----------------------------
+@dataclass(frozen=True)
+class Thresholds:
+    # OCR
+    ocr_min_conf: float = 0.70
+    baseline_min_conf: float = 0.70
+    dewarp_min_baselines: int = 15
+    dewarp_polyfit_min_points: int = 10
+
+    # Detection
+    table_conf: float = 0.30
+
+    # Classification
+    digital_override_conf: float = (
+        0.99  # if predicted "digital" below this => treat as camera_doc
+    )
+
+
+@dataclass(frozen=True)
+class ModelPaths:
+    weights_dir: Path = Path("./weights")
+    segmentation_model: Path = Path(
+        "./segmentaition_data/YOLO11_PaperSeg/weights/best.pt"
+    )
+    doclaynet_model: Path = Path("./weights/yolov12l-doclaynet.pt")
+    cls_model: Path = Path("./cls/YOLO11_cls2/weights/best.pt")
+
+
+@dataclass(frozen=True)
+class OutputPaths:
+    out_dir: Path = Path("./out")
+    debug_dir: Path = Path("./out/debug")
+
+
+@dataclass(frozen=True)
+class RuntimeConfig:
+    qt_qpa_platform: str = "wayland;xcb"
+    paddle_lang: str = "en"
+    paddle_use_textline_orientation: bool = True
+
+
+@dataclass(frozen=True)
+class PipelineConfig:
+    thresholds: Thresholds = Thresholds()
+    models: ModelPaths = ModelPaths()
+    outputs: OutputPaths = OutputPaths()
+    runtime: RuntimeConfig = RuntimeConfig()
+
+
+# ----------------------------
+# Pipeline
+# ----------------------------
+StageReporter = Callable[[str], None]
+
+
 class Pipeline:
-    def __init__(self):
-        self.ocr = PaddleOCR(lang="en", use_textline_orientation=True)
-        # logging.getLogger("ppocr").handlers = []
+    def __init__(self, cfg: PipelineConfig, console: Console):
+        self.cfg = cfg
+        self.console = console
 
-        # self.img = image
-        self.segmentation = YOLO("./segmentaition_data/YOLO11_PaperSeg/weights/best.pt")
-        # self.doclaynet = YOLO(WIGHTS + "yolov12l-doclaynet")
-        self.doclaynet = YOLO(WIGHTS + "yolov12l-doclaynet.pt")
-        # self.scan = YOLO()
-        self.cls = YOLO("./cls/YOLO11_cls2/weights/best.pt")
+        os.environ["QT_QPA_PLATFORM"] = cfg.runtime.qt_qpa_platform
 
-    def extract_text_baselines(self, img: np.ndarray):
-        result = self.ocr.ocr(img)
-        if not result or not result[0]:
-            return []
+        # Silence PaddleOCR logs
+        silence_paddleocr_logs()
 
-        baselines = []
+        # Models
+        with suppress_output():
+            self.ocr = PaddleOCR(
+                lang=cfg.runtime.paddle_lang,
+                use_textline_orientation=cfg.runtime.paddle_use_textline_orientation,
+            )
+        self.segmentation = YOLO(str(cfg.models.segmentation_model))
+        self.doclaynet = YOLO(str(cfg.models.doclaynet_model))
+        self.cls = YOLO(str(cfg.models.cls_model))
 
-        for line in result[0]:
-            if len(line) < 2:
-                continue
+        # Outputs
+        cfg.outputs.out_dir.mkdir(parents=True, exist_ok=True)
+        cfg.outputs.debug_dir.mkdir(parents=True, exist_ok=True)
 
-            box = np.array(line[0])
+    # ---------- Geometry / transforms ----------
+    @staticmethod
+    def _quad_to_aabb(quad: List[List[int]]) -> Tuple[int, int, int, int]:
+        xs = [p[0] for p in quad]
+        ys = [p[1] for p in quad]
+        return min(xs), min(ys), max(xs), max(ys)
 
-            meta = line[1]
-
-            # ---- Robust confidence extraction ----
-            if isinstance(meta, (list, tuple)):
-                if len(meta) >= 2:
-                    text = meta[0]
-                    conf = float(meta[1])
-                else:
-                    conf = 1.0
-            else:
-                conf = 1.0  # no confidence provided
-
-            if conf < 0.7:
-                continue
-
-            # Bottom edge midpoint = baseline point
-            bl = box[3]
-            br = box[2]
-
-            baselines.append((int((bl[0] + br[0]) / 2), int((bl[1] + br[1]) / 2)))
-
-        return baselines
-
-    def fit_baseline_curve(self, points, img_width):
-        if len(points) < 10:
+    @staticmethod
+    def _clip_bbox(
+        bbox: Tuple[int, int, int, int], img_w: int, img_h: int
+    ) -> Optional[Tuple[int, int, int, int]]:
+        x1, y1, x2, y2 = bbox
+        x1 = max(0, min(x1, img_w - 1))
+        y1 = max(0, min(y1, img_h - 1))
+        x2 = max(0, min(x2, img_w))
+        y2 = max(0, min(y2, img_h))
+        if x2 <= x1 or y2 <= y1:
             return None
+        return (x1, y1, x2, y2)
 
-        xs = np.array([p[0] for p in points])
-        ys = np.array([p[1] for p in points])
-
-        coeffs = np.polyfit(xs, ys, deg=2)
-        poly = np.poly1d(coeffs)
-
-        curve_y = np.array([poly(x) for x in range(img_width)])
-        mean_y = np.mean(curve_y)
-
-        return curve_y - mean_y
-
-    def build_dewarp_maps(self, img_shape, displacement):
-        h, w = img_shape[:2]
-
-        map_x = np.zeros((h, w), np.float32)
-        map_y = np.zeros((h, w), np.float32)
-
-        for y in range(h):
-            for x in range(w):
-                map_x[y, x] = x
-                map_y[y, x] = y - displacement[x]
-
-        return map_x, map_y
-
-    def dewarp_with_ocr(self, img: np.ndarray):
-        baselines = self.extract_text_baselines(img)
-        if len(baselines) < 15:
-            print("Not enough text for dewarp")
-            return img
-
-        displacement = self.fit_baseline_curve(baselines, img.shape[1])
-        if displacement is None:
-            return img
-
-        map_x, map_y = self.build_dewarp_maps(img.shape, displacement)
-        dewarped = cv2.remap(img, map_x, map_y, cv2.INTER_CUBIC)
-
-        return dewarped
-
-    def get_document_mask(self, img: np.ndarray):
-        results = self.segmentation(img, verbose=False)[0]
-        if results.masks is None:
-            return None
-
-        # Combine all masks (if multiple detected)
-        mask = results.masks.data[0].cpu().numpy()
-        mask = (mask * 255).astype(np.uint8)
-
-        # Resize mask to image size
-        mask = cv2.resize(mask, (img.shape[1], img.shape[0]))
-        return mask
-
-    def find_document_corners(self, mask: np.ndarray):
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        if not contours:
-            return None
-
-        cnt = max(contours, key=cv2.contourArea)
-        epsilon = 0.02 * cv2.arcLength(cnt, True)
-        approx = cv2.approxPolyDP(cnt, epsilon, True)
-
-        if len(approx) == 4:
-            return approx.reshape(4, 2)
-
-        # Fallback: min-area rectangle
-        rect = cv2.minAreaRect(cnt)
-        box = cv2.boxPoints(rect)
-        return box.astype(int)
-
-    def order_points(self, pts):
+    @staticmethod
+    def order_points(pts: np.ndarray) -> np.ndarray:
         rect = np.zeros((4, 2), dtype="float32")
         s = pts.sum(axis=1)
         diff = np.diff(pts, axis=1)
@@ -166,8 +227,8 @@ class Pipeline:
         rect[3] = pts[np.argmax(diff)]  # bottom-left
         return rect
 
-    def perspective_transform(self, image, pts):
-        rect = self.order_points(pts)
+    def perspective_transform(self, image: np.ndarray, pts: np.ndarray) -> np.ndarray:
+        rect = self.order_points(pts.astype("float32"))
         (tl, tr, br, bl) = rect
 
         widthA = np.linalg.norm(br - bl)
@@ -189,62 +250,75 @@ class Pipeline:
         )
 
         M = cv2.getPerspectiveTransform(rect, dst)
-        warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
-        return warped
+        return cv2.warpPerspective(image, M, (maxWidth, maxHeight))
 
+    @staticmethod
     def rotate(
-        self,
-        image: np.ndarray,
-        angle: float,
-        background: Union[int, Tuple[int, int, int]],
+        image: np.ndarray, angle: float, background: Union[int, Tuple[int, int, int]]
     ) -> np.ndarray:
-        """Rotates an image and expands the canvas to prevent cropping corners."""
-        old_width, old_height = image.shape[:2]
-        angle_radian = math.radians(angle)
+        """Rotate and expand canvas to avoid cropping."""
+        h, w = image.shape[:2]
+        angle_rad = math.radians(angle)
 
-        # Calculate new canvas dimensions
-        width = abs(np.sin(angle_radian) * old_height) + abs(
-            np.cos(angle_radian) * old_width
-        )
-        height = abs(np.sin(angle_radian) * old_width) + abs(
-            np.cos(angle_radian) * old_height
-        )
+        new_w = abs(np.sin(angle_rad) * h) + abs(np.cos(angle_rad) * w)
+        new_h = abs(np.sin(angle_rad) * w) + abs(np.cos(angle_rad) * h)
 
-        image_center = tuple(np.array(image.shape[1::-1]) / 2)
-        rot_mat = cv2.getRotationMatrix2D(image_center, angle, 1.0)
+        center = (w / 2.0, h / 2.0)
+        rot_mat = cv2.getRotationMatrix2D(center, angle, 1.0)
 
-        # Adjust translation to keep image centered in new canvas
-        rot_mat[1, 2] += (width - old_width) / 2
-        rot_mat[0, 2] += (height - old_height) / 2
+        rot_mat[0, 2] += (new_w - w) / 2.0
+        rot_mat[1, 2] += (new_h - h) / 2.0
 
         return cv2.warpAffine(
             image,
             rot_mat,
-            (int(round(height)), int(round(width))),
+            (int(round(new_w)), int(round(new_h))),
             borderValue=background,
         )
 
-    def _scan_with_fallback(self, img: np.ndarray):
-        """Processes an image array to find and crop the document."""
-        # 1. Try YOLO first (Pass the numpy array directly)
+    # ---------- Preprocess / scan ----------
+    def get_document_mask(self, img: np.ndarray) -> Optional[np.ndarray]:
         results = self.segmentation(img, verbose=False)[0]
+        if results.masks is None:
+            return None
+        mask = results.masks.data[0].cpu().numpy()
+        mask = (mask * 255).astype(np.uint8)
+        return cv2.resize(mask, (img.shape[1], img.shape[0]))
 
-        if len(results.boxes) > 0:
+    @staticmethod
+    def find_document_corners(mask: np.ndarray) -> Optional[np.ndarray]:
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return None
+
+        cnt = max(contours, key=cv2.contourArea)
+        epsilon = 0.02 * cv2.arcLength(cnt, True)
+        approx = cv2.approxPolyDP(cnt, epsilon, True)
+
+        if len(approx) == 4:
+            return approx.reshape(4, 2)
+
+        rect = cv2.minAreaRect(cnt)
+        box = cv2.boxPoints(rect)
+        return box.astype(int)
+
+    def _scan_with_fallback(self, img: np.ndarray) -> np.ndarray:
+        """Find and crop the document region."""
+        results = self.segmentation(img, verbose=False)[0]
+        if results.boxes is not None and len(results.boxes) > 0:
             best_box = None
             max_area = 0
-            for box_data in results.boxes:
-                box = box_data.xyxy[0].cpu().numpy().astype(int)
-                area = (box[2] - box[0]) * (box[3] - box[1])
+            for b in results.boxes:
+                x1, y1, x2, y2 = b.xyxy[0].cpu().numpy().astype(int)
+                area = max(0, x2 - x1) * max(0, y2 - y1)
                 if area > max_area:
                     max_area = area
-                    best_box = box
+                    best_box = (x1, y1, x2, y2)
+            if best_box:
+                x1, y1, x2, y2 = best_box
+                return img[y1:y2, x1:x2]
 
-            if best_box is not None:
-                print("YOLO detected document.")
-                return img[best_box[1] : best_box[3], best_box[0] : best_box[2]]
-
-        # 2. Fallback: OpenCV Contour Detection
-        print("YOLO found nothing. Using OpenCV fallback...")
+        # OpenCV fallback
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
         edged = cv2.Canny(blur, 75, 200)
@@ -259,73 +333,135 @@ class Pipeline:
 
         return img
 
-    def _preProcess(self, imgName: str):
-        results = self.cls.predict(imgName, verbose=False)
-        classification = results[0]
+    def _preprocess(
+        self, img_path: Union[str, Path], report: Optional[StageReporter] = None
+    ) -> Optional[np.ndarray]:
+        img_path = str(img_path)
 
-        # Get the top prediction details
-        top_class_index = classification.probs.top1
-        top_class_name = classification.names[top_class_index]
-        confidence = classification.probs.top1conf.item()
+        if report:
+            report("classify")
 
-        # Threshold logic
-        if confidence < 0.99 and top_class_name == "digital":
+        results = self.cls.predict(img_path, verbose=False)
+        pred = results[0]
+        top_idx = pred.probs.top1
+        top_name = pred.names[top_idx]
+        conf = float(pred.probs.top1conf.item())
+
+        if top_name == "digital" and conf < self.cfg.thresholds.digital_override_conf:
             final_class = "camera_doc"
         else:
-            final_class = top_class_name
+            final_class = top_name
 
-        print(final_class)
-        if final_class == "digital":
-            image = cv2.imread(imgName)
-            image_ndarray = np.array(image)
-            print("the image is digital no pre processing needed")
-            return image_ndarray
-        image = cv2.imread(imgName)
+        if report:
+            report(f"class={final_class} ({conf:.3f})")
+
+        image = cv2.imread(img_path)
         if image is None:
-            print(f"Error: Could not find {imgName}")
-        else:
-            print("Deskewing image...")
-            grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            angle = determine_skew(grayscale)
-            rotated_img = self.rotate(image, angle, (0, 0, 0))
-            mask = self.get_document_mask(rotated_img)
-            if mask is not None:
-                corners = self.find_document_corners(mask)
-                if corners is not None:
-                    warped = self.perspective_transform(rotated_img, corners)
-                    # return warped
-
-            out = warped if warped is not None else rotated_img
-            # B. Detection & Cropping Phase
-            print("Scanning for document...")
-            final_crop = self._scan_with_fallback(out)
-
-            # print("OCR-based dewarping...")
-            # final_crop = self.dewarp_with_ocr(final_crop)
-
-            return final_crop
-
-    def _clip_bbox(self, bbox, img_w, img_h):
-        x1, y1, x2, y2 = bbox
-        x1 = max(0, min(x1, img_w - 1))
-        y1 = max(0, min(y1, img_h - 1))
-        x2 = max(0, min(x2, img_w))
-        y2 = max(0, min(y2, img_h))
-        if x2 <= x1 or y2 <= y1:
+            self.console.log(f"[red]Error:[/red] Could not read image: {img_path}")
             return None
-        return (x1, y1, x2, y2)
 
-    def _quad_to_aabb(self, quad):
-        # quad: [[x,y],[x,y],[x,y],[x,y]]
-        xs = [p[0] for p in quad]
-        ys = [p[1] for p in quad]
-        return min(xs), min(ys), max(xs), max(ys)
+        if final_class == "digital":
+            # No pre-processing needed
+            return image
 
-    def _approx_word_boxes_from_line(self, line_quad, text):
-        """
-        Approximate per-word boxes by splitting the line's axis-aligned bounding box.
-        This is an approximation (best effort) when PaddleOCR doesn't return word boxes.
-        """
+        if report:
+            report("deskew")
+
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        angle = determine_skew(gray)
+        rotated = self.rotate(image, angle, (0, 0, 0))
+
+        if report:
+            report("mask/corners")
+
+        warped = None
+        mask = self.get_document_mask(rotated)
+        if mask is not None:
+            corners = self.find_document_corners(mask)
+            if corners is not None:
+                warped = self.perspective_transform(rotated, corners)
+
+        out = warped if warped is not None else rotated
+
+        if report:
+            report("scan/crop")
+
+        return self._scan_with_fallback(out)
+
+    # ---------- OCR / dewarp (optional pieces kept) ----------
+    # def extract_text_baselines(self, img: np.ndarray) -> List[Tuple[int, int]]:
+    #     # Using PaddleOCR .ocr() API
+    #     with suppress_output():
+    #         result = self.ocr.ocr(img)
+    #     if not result or not result[0]:
+    #         return []
+
+    #     baselines: List[Tuple[int, int]] = []
+    #     for line in result[0]:
+    #         if len(line) < 2:
+    #             continue
+
+    #         box = np.array(line[0])
+    #         meta = line[1]
+
+    #         # confidence extraction
+    #         if isinstance(meta, (list, tuple)) and len(meta) >= 2:
+    #             conf = float(meta[1])
+    #         else:
+    #             conf = 1.0
+
+    #         if conf < self.cfg.thresholds.baseline_min_conf:
+    #             continue
+
+    #         bl = box[3]
+    #         br = box[2]
+    #         baselines.append((int((bl[0] + br[0]) / 2), int((bl[1] + br[1]) / 2)))
+
+    #     return baselines
+
+    def fit_baseline_curve(
+        self, points: List[Tuple[int, int]], img_width: int
+    ) -> Optional[np.ndarray]:
+        if len(points) < self.cfg.thresholds.dewarp_polyfit_min_points:
+            return None
+
+        xs = np.array([p[0] for p in points], dtype=np.float32)
+        ys = np.array([p[1] for p in points], dtype=np.float32)
+
+        coeffs = np.polyfit(xs, ys, deg=2)
+        poly = np.poly1d(coeffs)
+        x_line = np.arange(img_width, dtype=np.float32)
+        curve_y = poly(x_line)
+        return curve_y - float(np.mean(curve_y))
+
+    @staticmethod
+    def build_dewarp_maps(
+        img_shape: Tuple[int, int, int], displacement: np.ndarray
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        h, w = img_shape[:2]
+        xx, yy = np.meshgrid(
+            np.arange(w, dtype=np.float32), np.arange(h, dtype=np.float32)
+        )
+        map_x = xx
+        map_y = yy - displacement[xx.astype(np.int32)]
+        return map_x, map_y
+
+    # def dewarp_with_ocr(self, img: np.ndarray) -> np.ndarray:
+    #     baselines = self.extract_text_baselines(img)
+    #     if len(baselines) < self.cfg.thresholds.dewarp_min_baselines:
+    #         return img
+
+    #     displacement = self.fit_baseline_curve(baselines, img.shape[1])
+    #     if displacement is None:
+    #         return img
+
+    #     map_x, map_y = self.build_dewarp_maps(img.shape, displacement)
+    #     return cv2.remap(img, map_x, map_y, cv2.INTER_CUBIC)
+
+    # ---------- Table OCR ----------
+    def _approx_word_boxes_from_line(
+        self, line_quad: List[List[int]], text: str
+    ) -> List[Dict[str, Any]]:
         words = [w for w in text.strip().split() if w]
         if not words:
             return []
@@ -334,210 +470,284 @@ class Pipeline:
         line_w = max(1, x_max - x_min)
         line_h = max(1, y_max - y_min)
 
-        # distribute width proportional to word lengths (including 1 space between words)
         lengths = [len(w) for w in words]
-        total = sum(lengths) + max(0, len(words) - 1)  # add spaces
-        total = max(1, total)
+        total = max(1, sum(lengths) + max(0, len(words) - 1))  # include spaces
 
-        out = []
+        out: List[Dict[str, Any]] = []
         cursor = x_min
         for i, w in enumerate(words):
-            w_units = len(w)
-            # allocate width in pixels
-            w_px = int(round(line_w * (w_units / total)))
-
-            # add a 1-unit "space" gap except after last word
+            w_px = int(round(line_w * (len(w) / total)))
             space_px = int(round(line_w * (1 / total))) if i < len(words) - 1 else 0
 
             x1 = cursor
             x2 = min(x_max, cursor + w_px)
 
-            # word quad as rectangle (axis-aligned)
-            word_quad = [[x1, y_min], [x2, y_min], [x2, y_min + line_h], [x1, y_min + line_h]]
-
-            out.append({
-                "word": w,
-                "cordinate": word_quad
-            })
-
+            word_quad = [
+                [x1, y_min],
+                [x2, y_min],
+                [x2, y_min + line_h],
+                [x1, y_min + line_h],
+            ]
+            out.append({"word": w, "cordinate": word_quad})
             cursor = min(x_max, x2 + space_px)
 
         return out
 
-    def ocr_table(self, table_img: np.ndarray, min_conf: float = 0.7):
-        """
-        Performs OCR on a table image using PaddleOCR and returns a clean, structured result.
+    def draw_ocr_debug(
+        self,
+        image: np.ndarray,
+        lines: List[Dict[str, Any]],
+        draw_words: bool = True,
+        draw_bbox: bool = True,
+        draw_quad: bool = True,
+    ) -> np.ndarray:
+        debug_img = image.copy()
 
-        Returns:
-            List[dict] where each dict represents one recognized text line:
-            {
-                "line_id": int,
-                "line_cord": [[x,y], [x,y], [x,y], [x,y]],   # quadrilateral (4 points)
-                "bbox": [x_min, y_min, x_max, y_max],        # axis-aligned bounding box
-                "text": str,
-                "conf": float,
-                "words": List[dict]  # approximated word boxes
-            }
+        for line in lines:
+            quad = np.array(line["line_cord"], dtype=np.int32)
+            bbox = line["bbox"]
+            text = line["text"]
+
+            if draw_quad:
+                cv2.polylines(
+                    debug_img, [quad], isClosed=True, color=(0, 255, 0), thickness=2
+                )
+
+            if draw_bbox:
+                x1, y1, x2, y2 = bbox
+                cv2.rectangle(
+                    debug_img, (x1, y1), (x2, y2), color=(255, 0, 0), thickness=1
+                )
+
+            cv2.putText(
+                debug_img,
+                text,
+                (bbox[0], max(0, bbox[1] - 5)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 255),
+                1,
+                cv2.LINE_AA,
+            )
+
+            if draw_words:
+                for w in line["words"]:
+                    word_quad = np.array(w["cordinate"], dtype=np.int32)
+                    cv2.polylines(debug_img, [word_quad], True, (255, 255, 0), 1)
+
+        return debug_img
+
+    def ocr_table(self, table_img: np.ndarray) -> List[Dict[str, Any]]:
         """
-        ocr_res = self.ocr.predict(table_img)
+        OCR a table crop and return structured lines.
+        Uses PaddleOCR .predict() JSON output (as in your code).
+        """
+        with suppress_output():
+            ocr_res = self.ocr.predict(table_img)
         if not ocr_res or not ocr_res[0]:
             return []
 
-        # ocr_res[0] now has a .json attribute with the detailed result
-        ocr_json = ocr_res[0].json['res']
+        ocr_json = ocr_res[0].json["res"]
+        rec_polys = ocr_json["rec_polys"]
+        rec_texts = ocr_json["rec_texts"]
+        rec_scores = ocr_json["rec_scores"]
 
-        rec_polys = ocr_json['rec_polys']  # list of quadrilaterals [[x,y], ...] x4
-        rec_boxes = ocr_json['rec_boxes']  # axis-aligned [xmin, ymin, xmax, ymax] (optional fallback)
-        rec_texts = ocr_json['rec_texts']
-        rec_scores = ocr_json['rec_scores']
-
-        lines = []
-        for line_id, (poly, text, conf) in enumerate(zip(rec_polys, rec_texts, rec_scores)):
+        lines: List[Dict[str, Any]] = []
+        for line_id, (poly, text, conf) in enumerate(
+            zip(rec_polys, rec_texts, rec_scores)
+        ):
             text = str(text).strip()
             conf = float(conf)
 
-            if conf < min_conf or not text:
+            if conf < self.cfg.thresholds.ocr_min_conf or not text:
                 continue
 
-            # Use the quadrilateral coordinates (more accurate for rotated/skewed text)
-            line_quad_int = [[int(round(p[0])), int(round(p[1]))] for p in poly]
+            line_quad = [[int(round(p[0])), int(round(p[1]))] for p in poly]
+            xs = [p[0] for p in line_quad]
+            ys = [p[1] for p in line_quad]
+            bbox = [min(xs), min(ys), max(xs), max(ys)]
 
-            # Compute axis-aligned bbox for convenience (min/max of the 4 points)
-            xs = [p[0] for p in line_quad_int]
-            ys = [p[1] for p in line_quad_int]
-            bbox = [min(xs), min(ys), max(xs), max(ys)]  # [xmin, ymin, xmax, ymax]
-
-            # Approximate word-level boxes from the line quadrilateral + text
-            words = self._approx_word_boxes_from_line(line_quad_int, text)
-
-            lines.append({
-                "line_id": line_id,
-                "line_cord": line_quad_int,  # quadrilateral (as you had before)
-                "bbox": bbox,  # new: axis-aligned rectangle
-                "text": text,
-                "conf": conf,
-                "words": words
-            })
+            lines.append(
+                {
+                    "line_id": line_id,
+                    "line_cord": line_quad,
+                    "bbox": bbox,
+                    "text": text,
+                    "conf": conf,
+                    "words": self._approx_word_boxes_from_line(line_quad, text),
+                }
+            )
 
         return lines
-    def detect_tables(self, image: np.ndarray, conf_thres: float = 0.3):
+
+    def detect_tables(self, image: np.ndarray) -> List[Dict[str, Any]]:
         """
-        Detect tables using DocLayNet YOLO model.
-        Table class index = 8
-        Computes pairwise distances between all tables.
+        Detect tables using DocLayNet YOLO.
+        Table class index = 8 (as in your code).
+        Adds pairwise distances between detected tables.
         """
         results = self.doclaynet(image, verbose=False)[0]
-
         if results.boxes is None:
             return []
 
-        tables = []
+        tables: List[Dict[str, Any]] = []
 
-        # Collect tables
         for box in results.boxes:
             cls_id = int(box.cls.item())
             conf = float(box.conf.item())
+            if cls_id != 8 or conf < self.cfg.thresholds.table_conf:
+                continue
 
-            if cls_id == 8 and conf >= conf_thres:
-                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
+            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
+            cx = (x1 + x2) // 2
+            cy = (y1 + y2) // 2
 
-                cx = (x1 + x2) // 2
-                cy = (y1 + y2) // 2
+            tables.append(
+                {"bbox": (x1, y1, x2, y2), "center": (cx, cy), "confidence": conf}
+            )
 
-                tables.append({
-                    "bbox": (x1, y1, x2, y2),
-                    "center": (cx, cy),
-                    "confidence": conf
-                })
+        for idx, t in enumerate(tables):
+            t["id"] = idx
 
-        # Assign IDs
-        for idx, table in enumerate(tables):
-            table["id"] = idx
-
-        # Compute distances
-        for table_a in tables:
-            ax, ay = table_a["center"]
-            table_a["distances"] = {}
-
-            for table_b in tables:
-                if table_a["id"] == table_b["id"]:
+        for a in tables:
+            ax, ay = a["center"]
+            a["distances"] = {}
+            for b in tables:
+                if a["id"] == b["id"]:
                     continue
-
-                bx, by = table_b["center"]
-
-                dx = bx - ax
-                dy = by - ay
-                dist = math.sqrt(dx * dx + dy * dy)
-
-                table_a["distances"][table_b["id"]] = {
+                bx, by = b["center"]
+                dx, dy = bx - ax, by - ay
+                a["distances"][b["id"]] = {
                     "dx": dx,
                     "dy": dy,
-                    "distance": dist
+                    "distance": float(math.hypot(dx, dy)),
                 }
 
         return tables
 
-    def process(self, imgName: str):
-        # A. Pre-Processing Phase
-        preProcessedImage = self._preProcess(imgName)
-        tables = None
-        if preProcessedImage is None:
+    def process(
+        self,
+        img_path: Union[str, Path],
+        *,
+        debug: bool = True,
+        report: Optional[StageReporter] = None,
+    ) -> Tuple[Optional[np.ndarray], List[Dict[str, Any]]]:
+        img = self._preprocess(img_path, report=report)
+        if img is None:
             return None, []
-        tables = self.detect_tables(preProcessedImage)
 
-        h, w = preProcessedImage.shape[:2]
-        for t in tables:
+        if report:
+            report("detect_tables")
+
+        tables = self.detect_tables(img)
+        h, w = img.shape[:2]
+
+        for t_idx, t in enumerate(tables):
             clipped = self._clip_bbox(t["bbox"], w, h)
             if clipped is None:
                 t["lines"] = []
                 continue
 
             x1, y1, x2, y2 = clipped
-            crop = preProcessedImage[y1:y2, x1:x2]
+            crop = img[y1:y2, x1:x2]
 
-            t["lines"] = self.ocr_table(crop)
+            if report:
+                report(f"ocr_table {t_idx + 1}/{len(tables)}")
 
-        return preProcessedImage, tables
-        # return preProcessedImage, tables
+            lines = self.ocr_table(crop)
+            t["lines"] = lines
+
+            if debug and lines:
+                debug_img = self.draw_ocr_debug(crop, lines)
+                debug_path = (
+                    self.cfg.outputs.debug_dir
+                    / f"{Path(str(img_path)).name}_table_{t_idx}_ocr_debug.jpg"
+                )
+                cv2.imwrite(str(debug_path), debug_img)
+
+        if report:
+            report("done")
+
+        return img, tables
 
 
-def main():
-    pipeline = Pipeline()
+# ----------------------------
+# Main
+# ----------------------------
+def main() -> None:
+    console = Console()
+    cfg = PipelineConfig()
+
+    # Nice startup summary
+    console.print("[bold]Pipeline config[/bold]")
+    console.print_json(data=to_jsonable(asdict(cfg)))
+
+    pipeline = Pipeline(cfg, console)
     images = get_datasets()
 
-    os.makedirs("out", exist_ok=True)
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[bold]{task.description}[/bold]"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn("• [cyan]{task.fields[stage]}[/cyan]"),
+        TextColumn("• {task.fields[path]}"),
+        TimeElapsedColumn(),
+        TimeRemainingColumn(),
+        console=console,
+        transient=False,
+    )
 
-    for i, image_path in enumerate(images):
-        img, tables = pipeline.process(image_path)
+    out_dir = cfg.outputs.out_dir
 
-        if img is None:
-            continue
+    with progress:
+        task = progress.add_task(
+            "Processing images",
+            total=len(images),
+            stage="init",
+            path="",
+        )
 
-        processed_path = os.path.join("out", f"{i}_processed.jpg")
-        cv2.imwrite(processed_path, img)
+        for i, image_path in enumerate(images):
+            image_path = str(image_path)
+            progress.update(task, path=Path(image_path).name, stage="start")
 
-        # Save table crops (optional)
-        for j, table in enumerate(tables):
-            x1, y1, x2, y2 = table["bbox"]
-            table_crop = img[y1:y2, x1:x2]
-            cv2.imwrite(os.path.join("out", f"{i}_table_{j}.jpg"), table_crop)
+            def report(stage: str) -> None:
+                # one-line updating via task fields
+                progress.update(task, stage=stage)
 
-        # Build document JSON
-        doc_json = {
-            "doc_id": i,
-            "image_path": str(image_path),
-            "processed_image_path": processed_path,
-            "image_size": {"width": int(img.shape[1]), "height": int(img.shape[0])},
-            "tables": tables,  # includes distances + lines from your OCR step
-        }
+            img, tables = pipeline.process(image_path, debug=True, report=report)
+            if img is None:
+                progress.advance(task, 1)
+                continue
 
-        json_path = os.path.join("out", f"{i}_doc.json")
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(to_jsonable(doc_json), f, ensure_ascii=False, indent=2)
+            processed_path = out_dir / f"{i}_processed.jpg"
+            cv2.imwrite(str(processed_path), img)
 
-        print(f"Saved: {json_path}")
+            # Save table crops (optional)
+            for j, table in enumerate(tables):
+                x1, y1, x2, y2 = table["bbox"]
+                crop = img[y1:y2, x1:x2]
+                cv2.imwrite(str(out_dir / f"{i}_table_{j}.jpg"), crop)
 
+            doc_json = {
+                "doc_id": i,
+                "image_path": image_path,
+                "processed_image_path": str(processed_path),
+                "image_size": {"width": int(img.shape[1]), "height": int(img.shape[0])},
+                "tables": tables,
+            }
+
+            json_path = out_dir / f"{i}_doc.json"
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(to_jsonable(doc_json), f, ensure_ascii=False, indent=2)
+
+            progress.update(task, stage=f"saved {json_path.name}")
+            progress.advance(task, 1)
+
+    console.print("\n[green]All done.[/green]")
 
 
 if __name__ == "__main__":
+    # If rich isn't installed: pip install rich
     main()
