@@ -16,3 +16,11 @@ yolov8x.pt
 .gitignore
 ./.gitignore
 *.graphml
+#datasets
+4k/
+MyPaperProject/
+#Document-segmentation.v1i.yolov11/
+cls/
+segmentaition_data/
+small_dataset/
+weights/
