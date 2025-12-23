@@ -1,25 +1,37 @@
-import gc
 import json
 import math
 import os
-import warnings
-from collections import defaultdict
-from typing import Any, Dict, List, Optional, Tuple, Union
-
-import cv2
-import networkx as nx
+from typing import Tuple, Union
 import numpy as np
+import cv2
 import torch
 from deskew import determine_skew
 from paddleocr import PaddleOCR
-from PIL import Image, ImageDraw, ImageFont
-from transformers import AutoModelForObjectDetection, DetrImageProcessor
 from ultralytics import YOLO
 
 from utils.get_dataset import get_datasets
 
 os.environ["QT_QPA_PLATFORM"] = "wayland;xcb"
 WIGHTS = "./weights/"
+
+def to_jsonable(obj):
+    """Recursively convert numpy/torch types + tuples to JSON-safe Python types."""
+    import numpy as np
+
+    if isinstance(obj, dict):
+        # JSON keys are strings; keep ints if you want, but converting is safer/cleaner
+        return {str(k): to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [to_jsonable(x) for x in obj]
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, (torch.Tensor,)):
+        return to_jsonable(obj.detach().cpu().numpy())
+    return obj
 
 
 class Pipeline:
@@ -293,10 +305,126 @@ class Pipeline:
 
             return final_crop
 
+    def _clip_bbox(self, bbox, img_w, img_h):
+        x1, y1, x2, y2 = bbox
+        x1 = max(0, min(x1, img_w - 1))
+        y1 = max(0, min(y1, img_h - 1))
+        x2 = max(0, min(x2, img_w))
+        y2 = max(0, min(y2, img_h))
+        if x2 <= x1 or y2 <= y1:
+            return None
+        return (x1, y1, x2, y2)
+
+    def _quad_to_aabb(self, quad):
+        # quad: [[x,y],[x,y],[x,y],[x,y]]
+        xs = [p[0] for p in quad]
+        ys = [p[1] for p in quad]
+        return min(xs), min(ys), max(xs), max(ys)
+
+    def _approx_word_boxes_from_line(self, line_quad, text):
+        """
+        Approximate per-word boxes by splitting the line's axis-aligned bounding box.
+        This is an approximation (best effort) when PaddleOCR doesn't return word boxes.
+        """
+        words = [w for w in text.strip().split() if w]
+        if not words:
+            return []
+
+        x_min, y_min, x_max, y_max = self._quad_to_aabb(line_quad)
+        line_w = max(1, x_max - x_min)
+        line_h = max(1, y_max - y_min)
+
+        # distribute width proportional to word lengths (including 1 space between words)
+        lengths = [len(w) for w in words]
+        total = sum(lengths) + max(0, len(words) - 1)  # add spaces
+        total = max(1, total)
+
+        out = []
+        cursor = x_min
+        for i, w in enumerate(words):
+            w_units = len(w)
+            # allocate width in pixels
+            w_px = int(round(line_w * (w_units / total)))
+
+            # add a 1-unit "space" gap except after last word
+            space_px = int(round(line_w * (1 / total))) if i < len(words) - 1 else 0
+
+            x1 = cursor
+            x2 = min(x_max, cursor + w_px)
+
+            # word quad as rectangle (axis-aligned)
+            word_quad = [[x1, y_min], [x2, y_min], [x2, y_min + line_h], [x1, y_min + line_h]]
+
+            out.append({
+                "word": w,
+                "cordinate": word_quad
+            })
+
+            cursor = min(x_max, x2 + space_px)
+
+        return out
+
+    def ocr_table(self, table_img: np.ndarray, min_conf: float = 0.7):
+        """
+        Performs OCR on a table image using PaddleOCR and returns a clean, structured result.
+
+        Returns:
+            List[dict] where each dict represents one recognized text line:
+            {
+                "line_id": int,
+                "line_cord": [[x,y], [x,y], [x,y], [x,y]],   # quadrilateral (4 points)
+                "bbox": [x_min, y_min, x_max, y_max],        # axis-aligned bounding box
+                "text": str,
+                "conf": float,
+                "words": List[dict]  # approximated word boxes
+            }
+        """
+        ocr_res = self.ocr.predict(table_img)
+        if not ocr_res or not ocr_res[0]:
+            return []
+
+        # ocr_res[0] now has a .json attribute with the detailed result
+        ocr_json = ocr_res[0].json['res']
+
+        rec_polys = ocr_json['rec_polys']  # list of quadrilaterals [[x,y], ...] x4
+        rec_boxes = ocr_json['rec_boxes']  # axis-aligned [xmin, ymin, xmax, ymax] (optional fallback)
+        rec_texts = ocr_json['rec_texts']
+        rec_scores = ocr_json['rec_scores']
+
+        lines = []
+        for line_id, (poly, text, conf) in enumerate(zip(rec_polys, rec_texts, rec_scores)):
+            text = str(text).strip()
+            conf = float(conf)
+
+            if conf < min_conf or not text:
+                continue
+
+            # Use the quadrilateral coordinates (more accurate for rotated/skewed text)
+            line_quad_int = [[int(round(p[0])), int(round(p[1]))] for p in poly]
+
+            # Compute axis-aligned bbox for convenience (min/max of the 4 points)
+            xs = [p[0] for p in line_quad_int]
+            ys = [p[1] for p in line_quad_int]
+            bbox = [min(xs), min(ys), max(xs), max(ys)]  # [xmin, ymin, xmax, ymax]
+
+            # Approximate word-level boxes from the line quadrilateral + text
+            words = self._approx_word_boxes_from_line(line_quad_int, text)
+
+            lines.append({
+                "line_id": line_id,
+                "line_cord": line_quad_int,  # quadrilateral (as you had before)
+                "bbox": bbox,  # new: axis-aligned rectangle
+                "text": text,
+                "conf": conf,
+                "words": words
+            })
+
+        return lines
     def detect_tables(self, image: np.ndarray, conf_thres: float = 0.3):
         """
         Detect tables using DocLayNet YOLO model.
         Table class index = 8
+        Computes pairwise distances between all tables.
         """
         results = self.doclaynet(image, verbose=False)[0]
 
@@ -305,13 +433,47 @@ class Pipeline:
 
         tables = []
 
+        # Collect tables
         for box in results.boxes:
             cls_id = int(box.cls.item())
             conf = float(box.conf.item())
 
             if cls_id == 8 and conf >= conf_thres:
                 x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
-                tables.append({"bbox": (x1, y1, x2, y2), "confidence": conf})
+
+                cx = (x1 + x2) // 2
+                cy = (y1 + y2) // 2
+
+                tables.append({
+                    "bbox": (x1, y1, x2, y2),
+                    "center": (cx, cy),
+                    "confidence": conf
+                })
+
+        # Assign IDs
+        for idx, table in enumerate(tables):
+            table["id"] = idx
+
+        # Compute distances
+        for table_a in tables:
+            ax, ay = table_a["center"]
+            table_a["distances"] = {}
+
+            for table_b in tables:
+                if table_a["id"] == table_b["id"]:
+                    continue
+
+                bx, by = table_b["center"]
+
+                dx = bx - ax
+                dy = by - ay
+                dist = math.sqrt(dx * dx + dy * dy)
+
+                table_a["distances"][table_b["id"]] = {
+                    "dx": dx,
+                    "dy": dy,
+                    "distance": dist
+                }
 
         return tables
 
@@ -323,12 +485,27 @@ class Pipeline:
             return None, []
         tables = self.detect_tables(preProcessedImage)
 
+        h, w = preProcessedImage.shape[:2]
+        for t in tables:
+            clipped = self._clip_bbox(t["bbox"], w, h)
+            if clipped is None:
+                t["lines"] = []
+                continue
+
+            x1, y1, x2, y2 = clipped
+            crop = preProcessedImage[y1:y2, x1:x2]
+
+            t["lines"] = self.ocr_table(crop)
+
         return preProcessedImage, tables
+        # return preProcessedImage, tables
 
 
 def main():
     pipeline = Pipeline()
     images = get_datasets()
+
+    os.makedirs("out", exist_ok=True)
 
     for i, image_path in enumerate(images):
         img, tables = pipeline.process(image_path)
@@ -336,12 +513,30 @@ def main():
         if img is None:
             continue
 
-        cv2.imwrite(f"{i}_processed.jpg", img)
+        processed_path = os.path.join("out", f"{i}_processed.jpg")
+        cv2.imwrite(processed_path, img)
 
+        # Save table crops (optional)
         for j, table in enumerate(tables):
             x1, y1, x2, y2 = table["bbox"]
             table_crop = img[y1:y2, x1:x2]
-            cv2.imwrite(f"{i}_table_{j}.jpg", table_crop)
+            cv2.imwrite(os.path.join("out", f"{i}_table_{j}.jpg"), table_crop)
+
+        # Build document JSON
+        doc_json = {
+            "doc_id": i,
+            "image_path": str(image_path),
+            "processed_image_path": processed_path,
+            "image_size": {"width": int(img.shape[1]), "height": int(img.shape[0])},
+            "tables": tables,  # includes distances + lines from your OCR step
+        }
+
+        json_path = os.path.join("out", f"{i}_doc.json")
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(to_jsonable(doc_json), f, ensure_ascii=False, indent=2)
+
+        print(f"Saved: {json_path}")
+
 
 
 if __name__ == "__main__":
