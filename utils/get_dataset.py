@@ -1,8 +1,7 @@
+import os
 from pathlib import Path
 
-base_dir = Path(
-    "/home/russellzparadox/uni/complex_network/projects/complextNetworkGraph/dataset"
-)
+base_dir = Path("./dataset")
 
 
 def get_datasets(path=base_dir):

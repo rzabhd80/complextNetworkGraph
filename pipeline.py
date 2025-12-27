@@ -189,7 +189,7 @@ class Pipeline:
             )
         self.segmentation = YOLO(str(cfg.models.segmentation_model))
         self.doclaynet = YOLO(str(cfg.models.doclaynet_model))
-        self.cls = YOLO(str(cfg.models.cls_model))
+        self.cls = (str(cfg.models.cls_model))
 
         # Outputs
         cfg.outputs.out_dir.mkdir(parents=True, exist_ok=True)
@@ -674,7 +674,7 @@ class Pipeline:
 # ----------------------------
 # Main
 # ----------------------------
-def main() -> None:
+def run_pipeline() -> None:
     console = Console()
     cfg = PipelineConfig()
 
@@ -748,6 +748,3 @@ def main() -> None:
     console.print("\n[green]All done.[/green]")
 
 
-if __name__ == "__main__":
-    # If rich isn't installed: pip install rich
-    main()
