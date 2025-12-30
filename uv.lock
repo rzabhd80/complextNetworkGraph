@@ -154,10 +154,12 @@ dependencies = [
     { name = "igraph", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "networkx", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "numpy", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "opencv-python", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "paddleocr", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "paddlepaddle", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "paddlex", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "pillow", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "pytesseract", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "python-doctr", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "rich", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "torch", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
@@ -172,10 +174,12 @@ requires-dist = [
     { name = "igraph", specifier = ">=1.0.0" },
     { name = "networkx", specifier = "==3.5" },
     { name = "numpy", specifier = "==2.3.3" },
+    { name = "opencv-python", specifier = ">=4.11.0.86" },
     { name = "paddleocr", specifier = "==3.2.0" },
     { name = "paddlepaddle", specifier = "==3.2.0" },
     { name = "paddlex", specifier = "==3.2.1" },
     { name = "pillow", specifier = "==11.3.0" },
+    { name = "pytesseract", specifier = ">=0.3.13" },
     { name = "python-doctr", specifier = ">=1.0.0" },
     { name = "rich", specifier = ">=14.2.0" },
     { name = "torch", specifier = "==2.5.1" },
@@ -1093,6 +1097,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/d1/96/53b3ebf0955edbd02ac6da16a818ecc65c939e98fdeb4e0958362bd385c8/pypdfium2-4.30.0-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:3d0dd3ecaffd0b6dbda3da663220e705cb563918249bda26058c6036752ba3a2", size = 2591077, upload-time = "2024-05-09T18:32:55.99Z" },
     { url = "https://files.pythonhosted.org/packages/65/cd/3f1edf20a0ef4a212a5e20a5900e64942c5a374473671ac0780eaa08ea80/pypdfium2-4.30.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f1f78d2189e0ddf9ac2b7a9b9bd4f0c66f54d1389ff6c17e9fd9dc034d06eb3f", size = 2812008, upload-time = "2024-05-09T18:32:59.886Z" },
     { url = "https://files.pythonhosted.org/packages/7a/c4/9e62d03f414e0e3051c56d5943c3bf42aa9608ede4e19dc96438364e9e03/pypdfium2-4.30.0-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:f33bd79e7a09d5f7acca3b0b69ff6c8a488869a7fab48fdf400fec6e20b9c8be", size = 6267430, upload-time = "2024-05-09T18:33:08.067Z" },
+]
+
+[[package]]
+name = "pytesseract"
+version = "0.3.13"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "pillow", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9f/a6/7d679b83c285974a7cb94d739b461fa7e7a9b17a3abfd7bf6cbc5c2394b0/pytesseract-0.3.13.tar.gz", hash = "sha256:4bf5f880c99406f52a3cfc2633e42d9dc67615e69d8a509d74867d3baddb5db9", size = 17689, upload-time = "2024-08-16T02:33:56.762Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7a/33/8312d7ce74670c9d39a532b2c246a853861120486be9443eebf048043637/pytesseract-0.3.13-py3-none-any.whl", hash = "sha256:7a99c6c2ac598360693d83a416e36e0b33a67638bb9d77fdcac094a3589d4b34", size = 14705, upload-time = "2024-08-16T02:36:10.09Z" },
 ]
 
 [[package]]
