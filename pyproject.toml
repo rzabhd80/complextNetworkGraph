@@ -1,0 +1,29 @@
+[project]
+name = "complextnetworkgraph"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "deskew>=1.5.3",
+    "igraph>=1.0.0",
+    "networkx==3.5",
+    "numpy==2.3.3",
+    "paddleocr==3.2.0",
+    "paddlepaddle==3.2.0",
+    "paddlex==3.2.1",
+    "pillow==11.3.0",
+    "python-doctr>=1.0.0",
+    "rich>=14.2.0",
+    "torch==2.5.1",
+    "transformers==4.57.3",
+    "typing>=3.10.0.0",
+    "ultralytics>=8.3.235",
+]
+
+[tool.uv]
+environments = [
+    "sys_platform == 'linux' and platform_machine == 'x86_64'",  # Arch Linux (adjust if arm64)
+    # Add others if cross-platform: "sys_platform == 'darwin'", etc.
+]
+
+# [tool.uv.platform]
+# linux = { index-url = ["https://download.pytorch.org/whl/cu121", "https://pypi.org/simple"] }
