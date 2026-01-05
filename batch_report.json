@@ -1,0 +1,219 @@
+{
+  "summary": {
+    "total_pairs": 5,
+    "successful": 5,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "overall_performance": {
+    "mean_score": 66.58,
+    "std_score": 3.36,
+    "median_score": 65.39,
+    "min_score": 63.15,
+    "max_score": 71.59,
+    "quality_assessment": "Poor - Major corrections required"
+  },
+  "structural_analysis": {
+    "mean_structural_score": 62.56,
+    "std_structural_score": 13.99,
+    "median_structural_score": 66.21,
+    "dimension_similarity": {
+      "mean": 68.9,
+      "std": 10.03,
+      "median": 70.48,
+      "min": 54.17,
+      "max": 82.05
+    },
+    "topology_similarity": {
+      "mean": 62.78,
+      "std": 11.52
+    },
+    "graph_edit_distance": {
+      "mean": 39.01,
+      "std": 25.42
+    },
+    "degree_distribution_similarity": {
+      "mean": 88.71,
+      "std": 8.55
+    }
+  },
+  "semantic_analysis": {
+    "mean_semantic_score": 69.26,
+    "std_semantic_score": 8.37,
+    "median_semantic_score": 69.57,
+    "exact_match_rate": {
+      "mean": 38.13,
+      "std": 12.23,
+      "median": 40.87,
+      "min": 24.67,
+      "max": 55.0
+    },
+    "fuzzy_match_rate": {
+      "mean": 58.06,
+      "std": 17.12
+    },
+    "character_similarity": {
+      "mean": 73.34,
+      "std": 8.11
+    },
+    "token_similarity": {
+      "mean": 57.98,
+      "std": 4.71
+    },
+    "position_weighted_similarity": {
+      "mean": 74.64,
+      "std": 8.82
+    }
+  },
+  "cell_statistics": {
+    "total_cells_processed": 527,
+    "total_exact_matches": 187,
+    "total_fuzzy_matches": 287,
+    "total_mismatches": 240,
+    "overall_exact_match_rate": 35.48
+  },
+  "quality_distribution": {
+    "excellent_95plus": 0,
+    "very_good_90to95": 0,
+    "good_80to90": 0,
+    "acceptable_70to80": 1,
+    "poor_below70": 4,
+    "distribution_percentages": {
+      "excellent": 0.0,
+      "very_good": 0.0,
+      "good": 0.0,
+      "acceptable": 20.0,
+      "poor": 80.0
+    }
+  },
+  "worst_performers": {
+    "by_overall_score": [
+      {
+        "generated": "natwest_3.tsv",
+        "ground_truth": "natwest_3.tsv",
+        "score": 63.15
+      },
+      {
+        "generated": "BankTSB_2.tsv",
+        "ground_truth": "BankTSB_2.tsv",
+        "score": 64.53
+      },
+      {
+        "generated": "BankTSB_1.tsv",
+        "ground_truth": "BankTSB_1.tsv",
+        "score": 65.39
+      },
+      {
+        "generated": "natwest_2.tsv",
+        "ground_truth": "natwest_2.tsv",
+        "score": 68.23
+      },
+      {
+        "generated": "natwest_1.tsv",
+        "ground_truth": "natwest_1.tsv",
+        "score": 71.59
+      }
+    ],
+    "by_structural_score": [
+      {
+        "generated": "natwest_3.tsv",
+        "ground_truth": "natwest_3.tsv",
+        "score": 39.99
+      },
+      {
+        "generated": "BankTSB_2.tsv",
+        "ground_truth": "BankTSB_2.tsv",
+        "score": 61.81
+      },
+      {
+        "generated": "natwest_2.tsv",
+        "ground_truth": "natwest_2.tsv",
+        "score": 66.21
+      },
+      {
+        "generated": "natwest_1.tsv",
+        "ground_truth": "natwest_1.tsv",
+        "score": 66.66
+      },
+      {
+        "generated": "BankTSB_1.tsv",
+        "ground_truth": "BankTSB_1.tsv",
+        "score": 78.14
+      }
+    ],
+    "by_semantic_score": [
+      {
+        "generated": "BankTSB_1.tsv",
+        "ground_truth": "BankTSB_1.tsv",
+        "score": 56.89
+      },
+      {
+        "generated": "BankTSB_2.tsv",
+        "ground_truth": "BankTSB_2.tsv",
+        "score": 66.34
+      },
+      {
+        "generated": "natwest_2.tsv",
+        "ground_truth": "natwest_2.tsv",
+        "score": 69.57
+      },
+      {
+        "generated": "natwest_1.tsv",
+        "ground_truth": "natwest_1.tsv",
+        "score": 74.88
+      },
+      {
+        "generated": "natwest_3.tsv",
+        "ground_truth": "natwest_3.tsv",
+        "score": 78.59
+      }
+    ]
+  },
+  "individual_results": [
+    {
+      "generated_file": "natwest_1.tsv",
+      "ground_truth_file": "natwest_1.tsv",
+      "overall_score": 71.59,
+      "structural_score": 66.66,
+      "semantic_score": 74.88,
+      "exact_match_rate": 40.87,
+      "mismatches": 30
+    },
+    {
+      "generated_file": "natwest_2.tsv",
+      "ground_truth_file": "natwest_2.tsv",
+      "overall_score": 68.23,
+      "structural_score": 66.21,
+      "semantic_score": 69.57,
+      "exact_match_rate": 42.35,
+      "mismatches": 70
+    },
+    {
+      "generated_file": "natwest_3.tsv",
+      "ground_truth_file": "natwest_3.tsv",
+      "overall_score": 63.15,
+      "structural_score": 39.99,
+      "semantic_score": 78.59,
+      "exact_match_rate": 55.0,
+      "mismatches": 5
+    },
+    {
+      "generated_file": "BankTSB_1.tsv",
+      "ground_truth_file": "BankTSB_1.tsv",
+      "overall_score": 65.39,
+      "structural_score": 78.14,
+      "semantic_score": 56.89,
+      "exact_match_rate": 24.67,
+      "mismatches": 97
+    },
+    {
+      "generated_file": "BankTSB_2.tsv",
+      "ground_truth_file": "BankTSB_2.tsv",
+      "overall_score": 64.53,
+      "structural_score": 61.81,
+      "semantic_score": 66.34,
+      "exact_match_rate": 27.78,
+      "mismatches": 38
+    }
+  ]
+}
